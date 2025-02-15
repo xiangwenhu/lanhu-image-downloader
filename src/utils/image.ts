@@ -21,14 +21,19 @@ export async function resizeImages({ sourceFolder, targetFolder, scale }: Resize
 
         try {
             const targetPath = path.join(targetFolder, file);
-
             // 获取尺寸
             const size = imageSize(fullPath);
-            const targeWidth = Math.ceil(size.width! * scale);
-            const targeHeight = Math.ceil(size.height! * scale);
+
+            if (!size || !size.height || !size.width) {
+                console.error(`resizeImages: ${targetPath} 尺寸读取失败, 调过`);
+                continue;
+            }
+
+            const targeWidth = Math.ceil(size.width * scale);
+            const targeHeight = Math.ceil(size.height * scale);
 
             // 重新设置尺寸
-            await (sharp(fullPath) as any).resize({ height: targeHeight, width: targeWidth }).toFile(targetPath);
+            await sharp(fullPath).resize({ height: targeHeight, width: targeWidth }).toFile(targetPath);
         } catch (err) {
             console.error(`图片尺寸调整失败：${fullPath}`);
         }

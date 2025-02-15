@@ -1,37 +1,48 @@
+import "petal-service";
+import { readConfig } from "./config";
 import LanHuDownloader from "./LanHuDownloader";
-import { ConfigOptions, ConfigParamsInformation, EnumUrlType } from "./types";
-import { getConfigByUrl } from "./utils/lanhu";
+import { DownloadOptions, ConfigParamsInformation, EnumUrlType } from "./types";
+import { getDownloadParamsByUrl } from "./utils/lanhu";
 
-export default function downloadByUrl(url: string, config: ConfigOptions) {
-    const configParams = getConfigByUrl(url, config);
-    if (config.type === EnumUrlType.unknown)
-        return console.error((configParams as ConfigParamsInformation<EnumUrlType.unknown>).params.message);
+export default function downloadByUrl(url: string, filename: string, downloadOptions: DownloadOptions) {
+    // 读取配置
+    const config = readConfig(filename);
+    // 设置服务的cookie
+    petalSetConfig({
+        headers: {
+            cookie: config.cookies.map(c => `${c.name}=${c.value}`).join("; ")
+        }
+    })
+    // 从url中解析下载参数
+    const downloadParams = getDownloadParamsByUrl(url, downloadOptions, config);
+    if (downloadParams.type === EnumUrlType.unknown)
+        throw new Error((downloadParams as ConfigParamsInformation<EnumUrlType.unknown>).params.message);
 
-
-    const team_id = (configParams as ConfigParamsInformation<EnumUrlType.project>).params.tid;
+    const team_id = (downloadParams as ConfigParamsInformation<EnumUrlType.project>).params.tid;
 
     const downloader = new LanHuDownloader({
-        team_id: team_id
+        team_id,
+        downloadScale: downloadOptions.downloadScale || config.downloadScale,
+        resizeScale: downloadOptions.resizeScale || config.resizeScale
     });
 
-    const { targetFolder } = config;
+    const { targetFolder } = downloadOptions;
 
-
-    switch (config.type) {
+    switch (downloadOptions.type) {
         case EnumUrlType.project:
-            const paramsP = (configParams as ConfigParamsInformation<EnumUrlType.project>).params;
+            const paramsP = (downloadParams as ConfigParamsInformation<EnumUrlType.project>).params;
             downloader.downloadProject({ project_id: paramsP.pid, targetFolder })
             break;
         case EnumUrlType.sector:
-            const paramsS = (configParams as ConfigParamsInformation<EnumUrlType.sector>).params;
+            const paramsS = (downloadParams as ConfigParamsInformation<EnumUrlType.sector>).params;
             downloader.downloadProjectGroup({ project_id: paramsS.pid, targetFolder, sectorName: paramsS.sectorName })
             break;
         case EnumUrlType.image:
-            const paramsImg = (configParams as ConfigParamsInformation<EnumUrlType.image>).params;
+            const paramsImg = (downloadParams as ConfigParamsInformation<EnumUrlType.image>).params;
             downloader.downloadSingleItem({ project_id: paramsImg.pid, targetFolder, image_id: paramsImg.image_id })
             break;
         default:
-            break;
+            throw new Error(`无效的type ${downloadOptions.type}`);
     }
 
 }

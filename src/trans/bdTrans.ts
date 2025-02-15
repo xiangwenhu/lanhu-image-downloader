@@ -39,6 +39,8 @@ export default async function bdTrans(query: string | string[]) {
 
     const config = getConfig();
 
+    if (!config.trans || !config.trans.appId || !config.trans.appKey) throw new Error(`未配置 appId或者appKey`);
+
     const appid = config.trans.appId;
     const key = config.trans.appKey;
     const salt = new Date().getTime();

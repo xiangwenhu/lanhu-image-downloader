@@ -62,7 +62,7 @@ class LanHuService extends PetalBaseService {
     })
     async getPSItemUrl(_params: PetalParamsPick.Params<PSItemParams>) {
         const version = this.res.data.result.versions[0];
-        return version.json_url;
+        return version.json_url || null;
     }
 
     @petalMethodDecorator({})

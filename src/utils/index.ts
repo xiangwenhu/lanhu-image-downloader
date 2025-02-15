@@ -119,11 +119,11 @@ export function removeWhitespace(str = '') {
 }
 
 
-export function readJsonFileSync(filePath: string): any {
+export function readJsonFileSync<T = any>(filePath: string): T {
     try {
         const data = fs.readFileSync(filePath, 'utf8');
         const jsonData = JSON.parse(data);
-        return jsonData;
+        return jsonData as T;
     } catch (error) {
         console.error('读取 JSON 文件时出错:', error);
         throw error; // 抛出错误，以便调用者处理

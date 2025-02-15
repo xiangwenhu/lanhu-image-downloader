@@ -6,10 +6,22 @@ import { getPSItemAssets } from './utils/lanhu';
 import { resizeImages } from './utils/image';
 import path from 'path';
 import { ProjectImageInfo, SectorItem } from './services/types';
+import { EnumDownloadScale } from './types';
 
 interface LanHuDownloaderOptions {
-    scale?: number;
+    /**
+     * 下载的图片的切图大小， 1 | 2倍尺寸
+     */
+    downloadScale?: EnumDownloadScale;
+    /**
+     * 下载后重新调整图片的大小，一般选择缩小
+     */
+    resizeScale?: number;
     team_id?: string;
+    /**
+     * 启用翻译
+     */
+    enableTranslation?: string;
 }
 
 interface DownloadSingleItemOptions {
@@ -53,8 +65,6 @@ export interface DownloadProjectOptions {
     project_id: string;
 }
 
-
-
 export default class LanHuDownloader {
 
     private options: LanHuDownloaderOptions;
@@ -62,7 +72,6 @@ export default class LanHuDownloader {
     constructor(options: LanHuDownloaderOptions = {}) {
         this.options = Object.assign({}, options);
     }
-
 
     /**
      * 通过设计稿地址，下载切图
@@ -73,7 +82,7 @@ export default class LanHuDownloader {
     private async downloadPSItemImages(url: string, targetFolder: string) {
 
         const psItemData = await lanHuServices.getPSItemData(url);
-        let assets = getPSItemAssets(psItemData) || [];
+        let assets = getPSItemAssets(psItemData, this.options.downloadScale) || [];
 
         if (assets.length <= 0) {
             return console.log(`${url} has no assets`);
@@ -81,16 +90,18 @@ export default class LanHuDownloader {
 
         ensureDir(targetFolder);
 
-
-        assets = await genEnglishNames(assets, 'name', 'enName');
+        // 是否启用翻译
+        if (!!this.options.enableTranslation) {
+            assets = await genEnglishNames(assets, 'name', 'enName');
+        }
 
         for (let i = 0; i < assets.length; i++) {
+            const asset = assets[i];
             // eslint-disable-next-line no-await-in-loop
-            const targetPath = path.join(targetFolder, `${assets[i]?.enName || assets[i]?.name}.png`);
+            const targetPath = path.join(targetFolder, `${asset.enName || asset.name}.png`);
 
             if (!assets[i]?.url) {
                 console.log('asset download failed:', assets[i]);
-                // eslint-disable-next-line no-continue
                 continue;
             }
 
@@ -106,9 +117,9 @@ export default class LanHuDownloader {
     async downloadSingleItem({ targetFolder, image_id, project_id }: DownloadSingleItemOptions) {
 
         const options = this.options;
-        const { scale = 2, team_id } = options;
+        const { resizeScale = 1, team_id } = options;
 
-        const needScale = scale !== 2;
+        const needScale = resizeScale !== 1;
         const sourceFolder = !needScale ? targetFolder : path.join(targetFolder, '__temp');
 
         ensureDir(sourceFolder);
@@ -123,11 +134,15 @@ export default class LanHuDownloader {
         });
         console.log('url:', itemUrl);
 
+        if (itemUrl == null) {
+            return console.warn(`设计稿 ${image_id} 没有切图`);
+        }
+
         ensureDir(targetFolder);
 
         try {
             // 下载图片
-            console.log('psItem url:', itemUrl);
+            // console.log('psItem url:', itemUrl);
             await this.downloadPSItemImages(itemUrl, sourceFolder);
 
             console.log('needScale:', needScale);
@@ -135,7 +150,7 @@ export default class LanHuDownloader {
                 const resizeOptions = {
                     sourceFolder,
                     targetFolder,
-                    scale: scale / 2,
+                    scale: resizeScale,
                 };
 
                 // 默认尺寸为1倍，所以压缩，如果2倍，无需
@@ -234,7 +249,9 @@ export default class LanHuDownloader {
         }, {});
         let images = sector.images.map(id => projectImagesMap[id]).filter(Boolean);
 
-        images = await genEnglishNames<ProjectImageInfo>(images, 'name', 'enName');
+        if (!!this.options.enableTranslation) {
+            images = await genEnglishNames<ProjectImageInfo>(images, 'name', 'enName');
+        }
 
         await sleep(100);
 
