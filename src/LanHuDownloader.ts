@@ -1,12 +1,13 @@
 
 import lanHuServices, { PSItemParams } from './services';
 import fsp from "fs/promises";
-import { ensureDir, genEnglishNames, getQueryStringObject, groupBy, sleep } from './utils';
+import { ensureDir, genEnglishNames, getQueryStringObject, groupBy, sanitizeFileName, sleep } from './utils';
 import { getPSItemAssets } from './utils/lanhu';
 import { resizeImages } from './utils/image';
 import path from 'path';
 import { ProjectImageInfo, SectorItem } from './services/types';
 import { EnumDownloadScale } from './types';
+import { execFileSync } from 'child_process';
 
 interface LanHuDownloaderOptions {
     /**
@@ -79,13 +80,13 @@ export default class LanHuDownloader {
      * @param targetFolder 
      * @returns 
      */
-    private async downloadPSItemImages(url: string, targetFolder: string) {
+    private async downloadImageSliceImages(url: string, targetFolder: string) {
 
         const psItemData = await lanHuServices.getPSItemData(url);
         let assets = getPSItemAssets(psItemData, this.options.downloadScale) || [];
 
         if (assets.length <= 0) {
-            return console.log(`${url} has no assets`);
+            return assets;
         }
 
         ensureDir(targetFolder);
@@ -94,6 +95,12 @@ export default class LanHuDownloader {
         if (!!this.options.enableTranslation) {
             assets = await genEnglishNames(assets, 'name', 'enName');
         }
+
+        // 非法文件名字符
+        assets.forEach(asset => {
+            asset.name = sanitizeFileName(asset.name);
+            asset.enName = sanitizeFileName(asset.enName)
+        })
 
         for (let i = 0; i < assets.length; i++) {
             const asset = assets[i];
@@ -114,15 +121,13 @@ export default class LanHuDownloader {
     /**
      * 通过 project_id 和 image_id 下载单张设计稿的切图
      */
-    async downloadSingleItem({ targetFolder, image_id, project_id }: DownloadSingleItemOptions) {
+    async downloadImageItem({ targetFolder, image_id, project_id }: DownloadSingleItemOptions) {
 
         const options = this.options;
         const { resizeScale = 1, team_id } = options;
 
         const needScale = resizeScale !== 1;
         const sourceFolder = !needScale ? targetFolder : path.join(targetFolder, '__temp');
-
-        ensureDir(sourceFolder);
 
         // 获取json_url
         const itemUrl = await lanHuServices.getPSItemUrl({
@@ -138,15 +143,15 @@ export default class LanHuDownloader {
             return console.warn(`设计稿 ${image_id} 没有切图`);
         }
 
-        ensureDir(targetFolder);
 
         try {
             // 下载图片
             // console.log('psItem url:', itemUrl);
-            await this.downloadPSItemImages(itemUrl, sourceFolder);
+            const assets = await this.downloadImageSliceImages(itemUrl, sourceFolder);
 
             console.log('needScale:', needScale);
-            if (needScale) {
+            if (needScale && assets.length > 0) {
+                ensureDir(targetFolder);
                 const resizeOptions = {
                     sourceFolder,
                     targetFolder,
@@ -163,7 +168,7 @@ export default class LanHuDownloader {
             console.log('downloadSingleItem error:', err);
             throw err;
         } finally {
-            if (needScale) {
+            if (needScale && execFileSync(sourceFolder)) {
                 // TODO:: 中文问题
                 // await del([sourceFolder]);
                 fsp.rm(sourceFolder, {
@@ -196,7 +201,7 @@ export default class LanHuDownloader {
             team_id,
         };
 
-        return this.downloadSingleItem({
+        return this.downloadImageItem({
             targetFolder,
             image_id: queryParam.image_id,
             project_id: queryParam.project_id,
@@ -261,6 +266,7 @@ export default class LanHuDownloader {
             englishName: i.englishName,
         }));
 
+        if (images.length === 0) return console.log(`${sector.name} 分组下的设计稿数量为0, 跳过`);
         ensureDir(targetFolder);
 
         fsp.writeFile(path.join(targetFolder, '__map.json'), JSON.stringify(namesMap, undefined, '\t'));
@@ -269,9 +275,8 @@ export default class LanHuDownloader {
         for (let i = 0; i < images.length; i++) {
             console.log('download PS Item:', images[i].name);
             const tf = path.join(targetFolder, images[i].enName || images[i].name);
-            ensureDir(tf);
 
-            await this.downloadSingleItem({
+            await this.downloadImageItem({
                 image_id: images[i].id,
                 targetFolder: tf,
                 project_id,

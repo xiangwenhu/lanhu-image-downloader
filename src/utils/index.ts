@@ -153,3 +153,10 @@ export function groupBy<T = Record<string, any>>(array: T[], key: keyof T): Map<
         return accumulator;
     }, new Map<T[keyof T], T[]>());
 }
+
+// 定义一个正则表达式匹配不允许出现在文件名中的字符
+const illegalRe = /[\/\?<>\\:\*\|"]/g;
+export function sanitizeFileName(fileName: string): string {
+    // 替换所有不合法的字符为空字符串
+    return fileName.replace(illegalRe, '');
+}

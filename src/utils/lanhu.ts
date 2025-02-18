@@ -29,15 +29,16 @@ export function getPSItemAssets(data: PSItemData, scale: EnumDownloadScale = Enu
 
     const urlProperty = propertyMap[scale];
 
-    const urls = data.info
+    const assets = data.info
         .filter(item => item.isAsset)
         .map(item => ({
-            url: item.images[urlProperty],
+            // 先按照预期获取，如果没获得预期，就会先获取1倍图，然后是2被褥
+            url: item.images[urlProperty] || item.images.orgUrl || item.images.png_xxxhd,
             name: item.name,
             enName: item.name,
-        }));
+        })).filter(item => item.url);
 
-    return urls;
+    return assets;
 }
 
 
