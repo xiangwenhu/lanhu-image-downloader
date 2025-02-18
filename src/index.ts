@@ -45,7 +45,7 @@ export default function downloadByUrl(url: string, configFilePath: string, downl
             break;
         case EnumUrlType.image:
             const paramsImg = (downloadParams as ConfigParamsInformation<EnumUrlType.image>).params;
-            downloader.downloadSingleItem({ project_id: paramsImg.pid, targetFolder, image_id: paramsImg.image_id })
+            downloader.downloadImageItem({ project_id: paramsImg.pid, targetFolder, image_id: paramsImg.image_id })
             break;
         default:
             throw new Error(`无效的type ${downloadOptions.type}`);
