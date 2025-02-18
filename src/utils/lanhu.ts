@@ -1,6 +1,6 @@
 import { getQueryStringObject } from ".";
 import { ConfigData } from "../config";
-import { PSItemData } from "../services/types";
+import { PSAssertItem, PSItemData } from "../services/types";
 import { EnumUrlType, ConfigParamsInformation, DownloadOptions, EnumDownloadScale } from "../types";
 
 
@@ -10,22 +10,30 @@ const propertyMap: Record<EnumDownloadScale, "orgUrl" | "png_xxxhd"> = {
 }
 
 export function getPSItemAssets(data: PSItemData, scale: EnumDownloadScale = EnumDownloadScale.default) {
-    // const { assets } = data;
-    // const assetsMap: Record<string, PSAssertItem> = assets.reduce((obj, asset) => {
-    //     obj[asset.id] = asset;
-    //     return obj;
-    // }, {});
-    // const urls = data.info
-    //     .map(item => {
-    //         if (assetsMap[item.id]) {
-    //             return {
-    //                 url: item.ddsImages?.orgUrl!,
-    //                 name: assetsMap[item.id].name,
-    //                 enName: assetsMap[item.id].name,
-    //             };
-    //         }
-    //     })
-    //     .filter(Boolean);
+
+
+
+
+    if (Array.isArray(data.assets) && data.assets.length > 0) {
+        const { assets } = data;
+        const assetsMap: Record<string, PSAssertItem> = assets.reduce((obj, asset) => {
+            obj[`${asset.id}`] = asset;
+            return obj;
+        }, {} as Record<string, PSAssertItem>);
+        const result = data.info
+            .map(item => {
+                if (item.isAsset && assetsMap[item.id]) {
+                    return {
+                        url: item.ddsImages?.orgUrl!,
+                        name: assetsMap[item.id].name,
+                        enName: assetsMap[item.id].name,
+                    };
+                }
+                return false
+            })
+            .filter(Boolean);
+        return result;
+    }
 
     const urlProperty = propertyMap[scale];
 

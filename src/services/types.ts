@@ -15,11 +15,20 @@ export interface PSItemData {
 
 export interface PSAssertItem {
     id: number;
-    isAsset: boolean;
+    isAsset?: boolean;
     isSlice: boolean;
     name: string;
     enName?: string;
     scaleType: string;
+    type: "bitmap" | "shape" | "text" | "symbol" | "layer-group" | "layerSection" | "layer" | "shapeLayer" | "textLayer",
+    exportable?: boolean;
+    hasExportDDSImage: boolean;
+    image?: {
+        url: string;
+    },
+    ddsImage?: {
+        url: string;
+    }
 }
 
 interface PSItemDataInfo {

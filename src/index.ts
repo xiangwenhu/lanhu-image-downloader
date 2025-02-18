@@ -3,11 +3,11 @@ import { readConfig } from "./config";
 import LanHuDownloader from "./LanHuDownloader";
 import { DownloadOptions, ConfigParamsInformation, EnumUrlType } from "./types";
 import { getDownloadParamsByUrl } from "./utils/lanhu";
-import { execFileSync } from "child_process";
+import { existsSync } from "fs";
 
 export default function downloadByUrl(url: string, configFilePath: string, downloadOptions: DownloadOptions) {
 
-    if(execFileSync(configFilePath)){
+    if(!existsSync(configFilePath)){
         throw new Error(`配置文件不存在：${configFilePath}`)
     }
 
