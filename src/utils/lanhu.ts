@@ -50,7 +50,7 @@ function createUnknownDownloadParams(message: string) {
     }
 }
 
-export function getDownloadParamsByUrl(urlValue: string, options: DownloadOptions, config: ConfigData): ConfigParamsInformation<EnumUrlType> {
+export function getDownloadParamsByUrl(urlValue: string, options: DownloadOptions, config: Pick<ConfigData, "teamId">): ConfigParamsInformation<EnumUrlType> {
 
     const { sectorName, type } = options;
 

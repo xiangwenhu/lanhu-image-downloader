@@ -3,10 +3,16 @@ import { readConfig } from "./config";
 import LanHuDownloader from "./LanHuDownloader";
 import { DownloadOptions, ConfigParamsInformation, EnumUrlType } from "./types";
 import { getDownloadParamsByUrl } from "./utils/lanhu";
+import { execFileSync } from "child_process";
 
-export default function downloadByUrl(url: string, filename: string, downloadOptions: DownloadOptions) {
+export default function downloadByUrl(url: string, configFilePath: string, downloadOptions: DownloadOptions) {
+
+    if(execFileSync(configFilePath)){
+        throw new Error(`配置文件不存在：${configFilePath}`)
+    }
+
     // 读取配置
-    const config = readConfig(filename);
+    const config = readConfig(configFilePath);
     // 设置服务的cookie
     petalSetConfig({
         headers: {
