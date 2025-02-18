@@ -9,32 +9,23 @@ export interface PSItemData {
     newSid: string;
     rawId: string;
     imgMD5: string;
-    assets: PSAssertItem[];
+    assets?: PSAssertItem[];
     info: PSItemDataInfo[];
+    isMergeData?: boolean;
 }
 
 export interface PSAssertItem {
     id: number;
-    isAsset?: boolean;
+    isAsset: boolean;
     isSlice: boolean;
     name: string;
     enName?: string;
-    scaleType: string;
-    type: "bitmap" | "shape" | "text" | "symbol" | "layer-group" | "layerSection" | "layer" | "shapeLayer" | "textLayer",
-    exportable?: boolean;
-    hasExportDDSImage: boolean;
-    image?: {
-        url: string;
-    },
-    ddsImage?: {
-        url: string;
-    }
+    scaleType?: string;
 }
 
 interface PSItemDataInfo {
     id: number;
     index: number;
-    type: string;
     name: string;
     visible: boolean;
     clipped: boolean;
@@ -47,6 +38,21 @@ interface PSItemDataInfo {
         png_xxxhd: string;
         svg: string;
     };
+    type: "bitmap" | "shape" | "text" | "symbol" | "layer-group" | "layerSection" | "layer" | "shapeLayer" | "textLayer",
+    exportable?: boolean;
+    hasExportDDSImage: boolean;
+    image?: {
+        imageUrl: string;
+    },
+    ddsImage?: {
+        imageUrl: string;
+    }
+}
+
+export interface AssetNameUrlInfo {
+    name: string;
+    enName?: string;
+    url: string;
 }
 
 export interface VersionInfo {

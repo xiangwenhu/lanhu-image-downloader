@@ -99,7 +99,7 @@ export default class LanHuDownloader {
         // 非法文件名字符
         assets.forEach(asset => {
             asset.name = sanitizeFileName(asset.name);
-            asset.enName = sanitizeFileName(asset.enName)
+            asset.enName = sanitizeFileName(asset.enName || asset.name)
         })
 
         for (let i = 0; i < assets.length; i++) {

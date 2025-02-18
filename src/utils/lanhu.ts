@@ -1,6 +1,6 @@
 import { getQueryStringObject } from ".";
 import { ConfigData } from "../config";
-import { PSAssertItem, PSItemData } from "../services/types";
+import { AssetNameUrlInfo, PSAssertItem, PSItemData } from "../services/types";
 import { EnumUrlType, ConfigParamsInformation, DownloadOptions, EnumDownloadScale } from "../types";
 
 
@@ -9,14 +9,17 @@ const propertyMap: Record<EnumDownloadScale, "orgUrl" | "png_xxxhd"> = {
     [EnumDownloadScale.double]: "png_xxxhd"
 }
 
-export function getPSItemAssets(data: PSItemData, scale: EnumDownloadScale = EnumDownloadScale.default) {
+const mergedPropertyMap: Record<EnumDownloadScale, "image" | "ddsImage"> = {
+    [EnumDownloadScale.default]: "image",
+    [EnumDownloadScale.double]: "ddsImage"
+}
 
-
-
+export function getPSItemAssets(data: PSItemData, scale: EnumDownloadScale = EnumDownloadScale.default): AssetNameUrlInfo[] {
 
     if (Array.isArray(data.assets) && data.assets.length > 0) {
+        const urlProperty = propertyMap[scale];
         const { assets } = data;
-        const assetsMap: Record<string, PSAssertItem> = assets.reduce((obj, asset) => {
+        const assetsMap: Record<string, PSAssertItem> = assets.filter(ass => ass.isAsset).reduce((obj, asset) => {
             obj[`${asset.id}`] = asset;
             return obj;
         }, {} as Record<string, PSAssertItem>);
@@ -24,29 +27,31 @@ export function getPSItemAssets(data: PSItemData, scale: EnumDownloadScale = Enu
             .map(item => {
                 if (item.isAsset && assetsMap[item.id]) {
                     return {
-                        url: item.ddsImages?.orgUrl!,
+                        url: item.images[urlProperty] || item.images.orgUrl || item.images.png_xxxhd,
                         name: assetsMap[item.id].name,
                         enName: assetsMap[item.id].name,
                     };
                 }
                 return false
             })
-            .filter(Boolean);
+            .filter(Boolean) as AssetNameUrlInfo[];
+        return result;
+    } else if (data.isMergeData) {
+        const urlProperty = mergedPropertyMap[scale];
+
+        const result = data.info.filter(item => !!item.exportable).map(item => {
+            return {
+                url: item[urlProperty]?.imageUrl || item.image?.imageUrl || item.ddsImage?.imageUrl,
+                name: item.name,
+                enName: item.name,
+            }
+        }).filter(it=> it.url)  as AssetNameUrlInfo[];
+
         return result;
     }
 
-    const urlProperty = propertyMap[scale];
 
-    const assets = data.info
-        .filter(item => item.isAsset)
-        .map(item => ({
-            // 先按照预期获取，如果没获得预期，就会先获取1倍图，然后是2被褥
-            url: item.images[urlProperty] || item.images.orgUrl || item.images.png_xxxhd,
-            name: item.name,
-            enName: item.name,
-        })).filter(item => item.url);
-
-    return assets;
+    return [];
 }
 
 
