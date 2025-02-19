@@ -1,0 +1,9 @@
+node_modules
+.vscode
+.gitignore
+docs
+tsconfig.json
+tests
+src
+scripts
+data

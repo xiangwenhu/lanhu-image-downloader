@@ -66,7 +66,7 @@ export interface DownloadProjectOptions {
     project_id: string;
 }
 
-export default class LanHuDownloader {
+export class LanHuDownloader {
 
     private options: LanHuDownloaderOptions;
 

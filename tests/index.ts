@@ -1,16 +1,17 @@
 import path from "path";
-import downloadByUrl from "../index";
-import { EnumUrlType } from "../types";
+import { EnumUrlType } from "../src/types";
+import { downloadByUrl } from "../src/index";
+import { URLS } from "./url";
 
 
 ; (async function init() {
-    const url = '';
+    const url = URLS.imageIsMerged;
 
 
-    const configPath = path.join(__dirname, "../../data/config.json")
+    const configPath = path.join(__dirname, "../data/config.json")
 
     downloadByUrl(url, configPath, {
-        targetFolder: path.join(__dirname, "../../data"),
+        targetFolder: path.join(__dirname, "../data"),
         type: EnumUrlType.image,
         sectorName: "未分组",
         // sectorName: "未标题-1"

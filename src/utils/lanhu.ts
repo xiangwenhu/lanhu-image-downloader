@@ -3,7 +3,6 @@ import { ConfigData } from "../config";
 import { AssetNameUrlInfo, PSAssertItem, PSItemData } from "../services/types";
 import { EnumUrlType, ConfigParamsInformation, DownloadOptions, EnumDownloadScale } from "../types";
 
-
 const propertyMap: Record<EnumDownloadScale, "orgUrl" | "png_xxxhd"> = {
     [EnumDownloadScale.default]: "orgUrl",
     [EnumDownloadScale.double]: "png_xxxhd"
@@ -13,8 +12,6 @@ const mergedPropertyMap: Record<EnumDownloadScale, "image" | "ddsImage"> = {
     [EnumDownloadScale.default]: "image",
     [EnumDownloadScale.double]: "ddsImage"
 }
-
-
 
 export function getPSItemAssets(data: PSItemData, scale: EnumDownloadScale = EnumDownloadScale.default): AssetNameUrlInfo[] {
 
@@ -29,8 +26,12 @@ export function getPSItemAssets(data: PSItemData, scale: EnumDownloadScale = Enu
             .map(item => {
                 if (item.isAsset && assetsMap[item.id]) {
                     const name = assetsMap[item.id].name;
+                    let url = item.images[urlProperty];
+                    if (!url) {
+                        url = scale == EnumDownloadScale.double ? item.images.png_xxxhd || item.images.orgUrl : item.images.orgUrl || item.images.png_xxxhd;
+                    }
                     return {
-                        url: item.images[urlProperty] || item.images.orgUrl || item.images.png_xxxhd,
+                        url,
                         name: name,
                         enName: name
                     };
@@ -42,10 +43,14 @@ export function getPSItemAssets(data: PSItemData, scale: EnumDownloadScale = Enu
     } else if (data.isMergeData) {
         const urlProperty = mergedPropertyMap[scale];
 
-        const result = data.info.filter(item => !!item.exportable && !!item.hasExportDDSImage).map(item => {
+        const result = data.info.filter(item => !!item.exportable).map(item => {
             const name = item.name;
+            let url =item[urlProperty]?.imageUrl ;
+            if (!url) {
+                url = scale == EnumDownloadScale.double ? item.ddsImage?.imageUrl || item.image?.imageUrl : item.image?.imageUrl || item.ddsImage?.imageUrl;
+            }
             return {
-                url: item[urlProperty]?.imageUrl || item.image?.imageUrl || item.ddsImage?.imageUrl,
+                url,
                 name: name,
                 enName: name,
             }
@@ -126,17 +131,13 @@ export function getDownloadParamsByUrl(urlValue: string, options: DownloadOption
 
 
 function createNameFactory() {
-
     const map = new Map<string, number>();
-
     return function nameFactory(name: string) {
 
         const count = map.get(name) || 0;
         const rName = count === 0 ? name : `${name}_${count + 1}`
         map.set(name, count + 1);
-
-        return rName
-
+        return rName;
     }
 }
 
@@ -144,12 +145,13 @@ function createNameFactory() {
 export function sanitizeAssetNames(assets: AssetNameUrlInfo[]): AssetNameUrlInfo[] {
 
     const nameFactory = createNameFactory();
+    const enNameFactory = createNameFactory();
 
     return assets.map(asset => {
         return {
             url: asset.url,
             name: nameFactory(sanitizeFileName(asset.name)),
-            enName: nameFactory(sanitizeFileName(asset.enName || asset.name))
+            enName: enNameFactory(sanitizeFileName(asset.enName || asset.name))
         }
     })
 }

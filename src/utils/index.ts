@@ -160,3 +160,8 @@ export function sanitizeFileName(fileName: string): string {
     // 替换所有不合法的字符为空字符串
     return fileName.replace(illegalRe, '');
 }
+
+
+export function isString(obj: any){
+    return typeof obj === "string";
+}

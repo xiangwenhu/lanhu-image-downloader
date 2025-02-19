@@ -3,7 +3,7 @@ import { readJsonFileSync } from "./utils";
 
 export interface ConfigData {
     teamId?: string;
-    cookies: { name: string, value: string }[];
+    cookies: { name: string, value: string }[] | string;
     /**
      * 下载的图片的切图大小， 1 | 2倍尺寸
      */

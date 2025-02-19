@@ -1,11 +1,10 @@
 /* eslint-disable import/prefer-default-export */
-import axios from 'axios';
+import "petal-service";
 import MD5 from './md5';
 import { getConfig } from '../config';
 
-const instance = axios.create({
-    responseType: "json"
-});
+const petalInstance = petalCreateInstance();
+const instance = petalInstance.getRequester();
 
 function transData(data: any) {
     let body = '';

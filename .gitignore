@@ -2,3 +2,4 @@
 /src/test.ts
 node_modules
 /dist
+/tests/url.ts
