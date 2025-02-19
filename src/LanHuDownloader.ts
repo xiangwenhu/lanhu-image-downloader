@@ -2,7 +2,7 @@
 import lanHuServices, { PSItemParams } from './services';
 import fsp from "fs/promises";
 import { ensureDir, genEnglishNames, getQueryStringObject, groupBy, sanitizeFileName, sleep } from './utils';
-import { getPSItemAssets } from './utils/lanhu';
+import { getPSItemAssets, sanitizeAssetNames } from './utils/lanhu';
 import { resizeImages } from './utils/image';
 import path from 'path';
 import { ProjectImageInfo, SectorItem } from './services/types';
@@ -22,7 +22,7 @@ interface LanHuDownloaderOptions {
     /**
      * 启用翻译
      */
-    enableTranslation?: string;
+    enableTranslation?: boolean;
 }
 
 interface DownloadSingleItemOptions {
@@ -96,11 +96,8 @@ export default class LanHuDownloader {
             assets = await genEnglishNames(assets, 'name', 'enName');
         }
 
-        // 非法文件名字符
-        assets.forEach(asset => {
-            asset.name = sanitizeFileName(asset.name);
-            asset.enName = sanitizeFileName(asset.enName || asset.name)
-        })
+        // 非法文件名字符, 以及重名处理
+        assets = sanitizeAssetNames(assets);
 
         for (let i = 0; i < assets.length; i++) {
             const asset = assets[i];

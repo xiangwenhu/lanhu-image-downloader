@@ -1,4 +1,4 @@
-import { getQueryStringObject } from ".";
+import { getQueryStringObject, sanitizeFileName } from ".";
 import { ConfigData } from "../config";
 import { AssetNameUrlInfo, PSAssertItem, PSItemData } from "../services/types";
 import { EnumUrlType, ConfigParamsInformation, DownloadOptions, EnumDownloadScale } from "../types";
@@ -14,6 +14,8 @@ const mergedPropertyMap: Record<EnumDownloadScale, "image" | "ddsImage"> = {
     [EnumDownloadScale.double]: "ddsImage"
 }
 
+
+
 export function getPSItemAssets(data: PSItemData, scale: EnumDownloadScale = EnumDownloadScale.default): AssetNameUrlInfo[] {
 
     if (Array.isArray(data.assets) && data.assets.length > 0) {
@@ -26,10 +28,11 @@ export function getPSItemAssets(data: PSItemData, scale: EnumDownloadScale = Enu
         const result = data.info
             .map(item => {
                 if (item.isAsset && assetsMap[item.id]) {
+                    const name = assetsMap[item.id].name;
                     return {
                         url: item.images[urlProperty] || item.images.orgUrl || item.images.png_xxxhd,
-                        name: assetsMap[item.id].name,
-                        enName: assetsMap[item.id].name,
+                        name: name,
+                        enName: name
                     };
                 }
                 return false
@@ -39,13 +42,14 @@ export function getPSItemAssets(data: PSItemData, scale: EnumDownloadScale = Enu
     } else if (data.isMergeData) {
         const urlProperty = mergedPropertyMap[scale];
 
-        const result = data.info.filter(item => !!item.exportable).map(item => {
+        const result = data.info.filter(item => !!item.exportable && !!item.hasExportDDSImage).map(item => {
+            const name = item.name;
             return {
                 url: item[urlProperty]?.imageUrl || item.image?.imageUrl || item.ddsImage?.imageUrl,
-                name: item.name,
-                enName: item.name,
+                name: name,
+                enName: name,
             }
-        }).filter(it=> it.url)  as AssetNameUrlInfo[];
+        }).filter(it => it.url) as AssetNameUrlInfo[];
 
         return result;
     }
@@ -117,4 +121,35 @@ export function getDownloadParamsByUrl(urlValue: string, options: DownloadOption
             return createUnknownDownloadParams("错误的EnumUrlType值")
     }
 
+}
+
+
+
+function createNameFactory() {
+
+    const map = new Map<string, number>();
+
+    return function nameFactory(name: string) {
+
+        const count = map.get(name) || 0;
+        const rName = count === 0 ? name : `${name}_${count + 1}`
+        map.set(name, count + 1);
+
+        return rName
+
+    }
+}
+
+
+export function sanitizeAssetNames(assets: AssetNameUrlInfo[]): AssetNameUrlInfo[] {
+
+    const nameFactory = createNameFactory();
+
+    return assets.map(asset => {
+        return {
+            url: asset.url,
+            name: nameFactory(sanitizeFileName(asset.name)),
+            enName: nameFactory(sanitizeFileName(asset.enName || asset.name))
+        }
+    })
 }

@@ -29,7 +29,8 @@ export default function downloadByUrl(url: string, configFilePath: string, downl
     const downloader = new LanHuDownloader({
         team_id,
         downloadScale: downloadOptions.downloadScale || config.downloadScale,
-        resizeScale: downloadOptions.resizeScale || config.resizeScale
+        resizeScale: downloadOptions.resizeScale || config.resizeScale,
+        enableTranslation: downloadOptions.enableTranslation || config.enableTranslation
     });
 
     const { targetFolder } = downloadOptions;

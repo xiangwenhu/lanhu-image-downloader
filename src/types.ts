@@ -50,6 +50,10 @@ export interface DownloadOptions {
      * 下载后重新调整图片的大小，一般选择缩小
      */
     resizeScale?: number;
+    /**
+     * 启用中专英文
+     */
+    enableTranslation?: boolean;
 }
 
 
