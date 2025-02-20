@@ -1,6 +1,6 @@
 import fsPlus from 'fs/promises';
 import "petal-service"
-import { PSItemData, RSProjectImages, RSProjectSectors } from "./types";
+import { PSItemData, ResTeamSource, ResUserTeam, RSProjectImages, RSProjectSectors } from "./types";
 
 interface GetProjectImagesParams {
     project_id: string;
@@ -25,6 +25,40 @@ interface GetProjectSectorsParam {
 class LanHuService extends PetalBaseService {
 
     /**
+     * 获得用户所在的全部团队信息
+     * @returns 
+     */
+    @petalMethodDecorator({
+        url: "/account/user_teams",
+        params: {
+            need_open_related: true,
+        }
+    })
+    async getUserTeams() {
+        const res = this.res.data as ResUserTeam;
+        return res.result;
+    }
+
+
+
+    /**
+     * 获得某个team的全部资源（项目，云图，文档等）
+     * @returns 
+     */
+    @petalMethodDecorator({
+        url: "https://lanhuapp.com/workbench/api/workbench/abstractfile/list",
+        method: "post"
+    })
+    async getTeamSourceList(_params: PetalParamsPick.Data<{
+        parentId: number;
+        tenantId: string;
+    }>) {
+        const res = this.res.data as ResTeamSource;
+        return res.data;
+    }
+
+
+    /**
      * 获取项目的全部图片（设计稿）
      * @param _params 
      * @returns 
@@ -35,22 +69,25 @@ class LanHuService extends PetalBaseService {
             dds_status: 1, position: 1, comment: 1
         }
     })
-    getProjectImages(_params: PetalParamsPick.Params<GetProjectImagesParams>) {
+    async getProjectImages(_params: PetalParamsPick.Params<GetProjectImagesParams>) {
         const res = this.res.data as RSProjectImages;
         return res.data.images;
     }
 
 
+    /**
+     * 获得项目的全部分组 sector
+     */
     @petalMethodDecorator({
         url: "/project/project_sectors"
     })
-    getProjectSectors(_params: PetalParamsPick.Params<GetProjectSectorsParam>) {
+    async getProjectSectors(_params: PetalParamsPick.Params<GetProjectSectorsParam>) {
         const res = this.res.data as RSProjectSectors;
         return res.data.sectors;
     }
 
     /**
-     * 获取设计稿地址
+     * 获取设最新版本计稿地址
      * @param _params 
      * @returns 
      */
@@ -78,6 +115,12 @@ class LanHuService extends PetalBaseService {
         })
     }
 
+    /**
+     * 下载图片
+     * @param url 
+     * @param targetPath 
+     * @returns 
+     */
     downloadAssert(url: string, targetPath: string) {
         return this.request<NodeJS.ArrayBufferView>({
             config: {

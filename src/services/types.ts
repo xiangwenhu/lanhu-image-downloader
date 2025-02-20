@@ -1,3 +1,22 @@
+export interface ResData<T = any> {
+    /**
+     * 0为0
+     */
+    code: number;
+    data: T;
+    message: string;
+}
+
+export interface ResResult<T = any> {
+    /**
+     * 0为0
+     */
+    code: string;
+    result: T;
+    message: string;
+}
+
+
 export interface PSItemData {
     exVersion: string;
     psVersion: number;
@@ -114,13 +133,10 @@ export interface ProjectImageInfo {
 /**
  * 项目分组信息
  */
-export type RSProjectSectors = {
-    code: string;
-    msg: string;
-    data: {
-        sectors: SectorItem[];
-    };
-};
+export type RSProjectSectors = ResData<{
+    sectors: SectorItem[];
+}>
+
 
 /**
  * 某个图片（设计稿的）版本信息
@@ -134,12 +150,67 @@ export type RSImageVersions = {
 /**
  * 某个项目的所有图片（设计稿）
  */
-export type RSProjectImages = {
-    code: string;
-    data: {
-        has_next: boolean;
-        id: string;
-        images: ProjectImageInfo[];
-    };
-    msg: string;
-};
+export type RSProjectImages = ResData<{
+    has_next: boolean;
+    id: string;
+    images: ProjectImageInfo[];
+}>;
+
+
+
+export interface UserTeam {
+    id: string;
+    name: string;
+    member_num: number;
+    left_days: number;
+    company: string;
+    phone: string;
+    tenant_status: number;
+    orders: number;
+    is_team_owner: boolean;
+    nickname: string;
+}
+
+
+export type ResUserTeam = ResResult<UserTeam[]>;
+
+
+export enum EnumSourceType  {
+    /**
+     * 设计项目
+     */
+    Project = 'dc_prj',
+    /**
+     * 思维云图
+     */
+    Board = 'board',
+
+    /**
+     * 超级文档
+     */
+    Doc = 'ts_single_doc',
+    /**
+     * 文件夹
+     */
+    Folder = 'folder'
+}
+
+
+export interface TeamSourceItem {
+    id: number; 
+    sourceName: string; 
+    sourceType: EnumSourceType; 
+    sourceId: string; 
+    sourceShortId: string; 
+    sourceThumbnail: string; 
+    sourceBg: string; 
+    parentId: number; 
+    openTime: number; 
+    updateTime: number; 
+    createTime: number; 
+    orderIndex: number; 
+    creator: string; 
+    permissionType: number; 
+}
+
+export type ResTeamSource = ResData<TeamSourceItem[]>

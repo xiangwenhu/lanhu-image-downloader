@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "image-size": "^1.2.0",
-    "petal-service": "^0.1.2",
+    "petal-service": "^0.1.3",
     "sharp": "^0.33.5"
   }
 }
