@@ -4,7 +4,6 @@ import { LanHuDownloader } from "./LanHuDownloader";
 import { DownloadOptions, ConfigParamsInformation, EnumUrlType } from "./types";
 import { getDownloadParamsByUrl } from "./utils/lanhu";
 import { existsSync } from "fs";
-import { isString } from "./utils";
 
 export function downloadByUrl(url: string, configFilePath: string, downloadOptions: DownloadOptions) {
 
@@ -28,10 +27,10 @@ export function downloadByUrl(url: string, configFilePath: string, downloadOptio
     if (downloadParams.type === EnumUrlType.unknown)
         throw new Error((downloadParams as ConfigParamsInformation<EnumUrlType.unknown>).params.message);
 
-    const team_id = (downloadParams as ConfigParamsInformation<EnumUrlType.project>).params.tid;
+    const teamId = (downloadParams as ConfigParamsInformation<EnumUrlType.project>).params.teamId;
 
     const downloader = new LanHuDownloader({
-        team_id,
+        teamId,
         downloadScale: downloadOptions.downloadScale || config.downloadScale,
         resizeScale: downloadOptions.resizeScale || config.resizeScale,
         enableTranslation: downloadOptions.enableTranslation || config.enableTranslation
@@ -42,15 +41,15 @@ export function downloadByUrl(url: string, configFilePath: string, downloadOptio
     switch (downloadOptions.type) {
         case EnumUrlType.project:
             const paramsP = (downloadParams as ConfigParamsInformation<EnumUrlType.project>).params;
-            downloader.downloadProject({ project_id: paramsP.pid, targetFolder })
+            downloader.downloadProject({ projectId: paramsP.projectId, targetFolder })
             break;
         case EnumUrlType.sector:
             const paramsS = (downloadParams as ConfigParamsInformation<EnumUrlType.sector>).params;
-            downloader.downloadProjectGroup({ project_id: paramsS.pid, targetFolder, sectorName: paramsS.sectorName })
+            downloader.downloadProjectGroup({ projectId: paramsS.projectId, targetFolder, sectorName: paramsS.sectorName })
             break;
         case EnumUrlType.image:
             const paramsImg = (downloadParams as ConfigParamsInformation<EnumUrlType.image>).params;
-            downloader.downloadImageItem({ project_id: paramsImg.pid, targetFolder, image_id: paramsImg.image_id })
+            downloader.downloadImageItem({ projectId: paramsImg.projectId, targetFolder, imageId: paramsImg.imageId })
             break;
         default:
             throw new Error(`无效的type ${downloadOptions.type}`);

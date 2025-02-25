@@ -42,7 +42,7 @@ export interface PSAssertItem {
     scaleType?: string;
 }
 
-interface PSItemDataInfo {
+export interface PSItemDataInfo {
     id: number;
     index: number;
     name: string;
@@ -64,7 +64,8 @@ interface PSItemDataInfo {
         imageUrl: string;
     },
     ddsImage?: {
-        imageUrl: string;
+        imageUrl?: string;
+        png_xxxhd?: string;
     }
 }
 

@@ -1,4 +1,15 @@
 
+
+interface CommonParamsOptions {
+    teamId: string;
+    projectId: string;
+    imageId: string;
+    sectorName: string;
+}
+
+type ProjectUrlParams = Pick<CommonParamsOptions, "teamId" | "projectId">;
+type ImageUrlParams = ProjectUrlParams & Pick<CommonParamsOptions, "imageId">;
+
 export enum EnumUrlType {
     project = 1,
     sector = 2,
@@ -7,20 +18,11 @@ export enum EnumUrlType {
 }
 
 export type ParamsMap = {
-    [EnumUrlType.project]: {
-        tid: string;
-        pid: string;
-    },
-    [EnumUrlType.sector]: {
-        tid: string;
-        pid: string;
+    [EnumUrlType.project]: ProjectUrlParams,
+    [EnumUrlType.sector]: ProjectUrlParams & {
         sectorName: string;
     },
-    [EnumUrlType.image]: {
-        tid: string;
-        pid: string;
-        image_id: string;
-    },
+    [EnumUrlType.image]: ImageUrlParams,
     [EnumUrlType.unknown]: {
         message: string;
     }

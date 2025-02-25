@@ -1,3 +1,4 @@
+import { existsSync } from 'fs';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -8,6 +9,9 @@ import * as path from 'path';
  */
 async function copyFile(sourcePath: string, destPath: string): Promise<void> {
     try {
+
+        if (!existsSync(sourcePath)) return console.error(`sourcePath 文件不存在`)
+
         // 确保目标目录存在
         const destDir = path.dirname(destPath);
         await fs.mkdir(destDir, { recursive: true });

@@ -7,7 +7,7 @@ interface GetProjectImagesParams {
     team_id: string;
 }
 
-export interface PSItemParams {
+export interface GetPSItemParams {
     image_id: string;
     team_id: string;
     project_id: string;
@@ -97,7 +97,7 @@ class LanHuService extends PetalBaseService {
             all_versions: 0
         }
     })
-    async getPSItemUrl(_params: PetalParamsPick.Params<PSItemParams>) {
+    async getPSItemUrl(_params: PetalParamsPick.Params<GetPSItemParams>) {
         const version = this.res.data.result.versions[0];
         return version.json_url || null;
     }
@@ -124,8 +124,11 @@ class LanHuService extends PetalBaseService {
     downloadAssert(url: string, targetPath: string) {
         return this.request<NodeJS.ArrayBufferView>({
             config: {
-                url,
-                responseType: "arraybuffer"
+                url: url,
+                responseType: "arraybuffer",
+                params: {
+                    noCache: true
+                }
             }
         }).then(data => fsPlus.writeFile(targetPath, data, 'binary'))
     }
