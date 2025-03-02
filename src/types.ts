@@ -64,3 +64,31 @@ export enum EnumDownloadScale {
     default = 1,
     double = 2
 }
+
+
+export interface Logger  {
+    /**
+     * 记录一条通用日志信息
+     * @param messages 要记录的日志信息，可以是多个参数
+     */
+    log(...messages: any[]): void;
+
+    /**
+     * 记录一条信息级别的日志信息
+     * @param messages 要记录的日志信息，可以是多个参数
+     */
+    info(...messages: any[]): void;
+
+    /**
+     * 记录一条警告级别的日志信息
+     * @param messages 要记录的日志信息，可以是多个参数
+     */
+    warn(...messages: any[]): void;
+
+    /**
+     * 记录一条错误级别的日志信息
+     * @param messages 要记录的日志信息，可以是多个参数
+     */
+    error(...messages: any[]): void;
+}
+}

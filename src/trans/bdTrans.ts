@@ -2,6 +2,7 @@
 import "petal-service";
 import MD5 from './md5';
 import { getConfig } from '../config';
+import { getLogger } from "../logger";
 
 const petalInstance = petalCreateInstance();
 const instance = petalInstance.getRequester();
@@ -34,6 +35,8 @@ interface TransResult {
 
 export default async function bdTrans(query: string | string[]) {
 
+    const logger = getLogger();
+
     const q = Array.isArray(query) ? query.join("\n") : query;
 
     const config = getConfig();
@@ -64,16 +67,16 @@ export default async function bdTrans(query: string | string[]) {
 
     const result = (await instance.get<TransResult>(endpoint)).data;
 
-    // console.log('result', result);
-    console.log(`bdTrans: ${new Date().toTimeString()}`, query, result);
+    // logger.log('result', result);
+    logger.log(`bdTrans: ${new Date().toTimeString()}`, query, result);
 
     if (result.trans_result == null) {
-        console.error("bdTrans failed:", result);
+        logger.error("bdTrans failed:", result);
         return null;
     }
     const resultData = result.trans_result || [];
 
-    // console.log('bdTrans:', resultData);
+    // logger.log('bdTrans:', resultData);
     return resultData;
 }
 

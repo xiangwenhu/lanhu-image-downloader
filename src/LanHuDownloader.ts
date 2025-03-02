@@ -8,8 +8,13 @@ import { ProjectImageInfo, SectorItem } from './services/types';
 import { ensureDir, genEnglishNames, getQueryStringObject, sleep } from './utils';
 import { resizeImages } from './utils/image';
 import { getPSItemAssets, sanitizeAssetNames } from './utils/lanhu';
+import { Logger } from './types';
+import { getLogger } from './logger';
 
 export class LanHuDownloader {
+
+
+    private logger: Logger = getLogger();
 
     private options: LanHuDownloaderOptions;
 
@@ -48,12 +53,12 @@ export class LanHuDownloader {
             const targetPath = path.join(targetFolder, `${asset.enName || asset.name}.png`);
 
             if (!assets[i]?.url) {
-                console.log('asset download failed:', assets[i]);
+                this.logger.log('asset download failed:', assets[i]);
                 continue;
             }
 
             await lanHuServices.downloadAssert(assets[i]?.url!, targetPath);
-            // console.log('成功下载资源：', targetPath);
+            // this.logger.log('成功下载资源：', targetPath);
         }
         return assets;
     }
@@ -77,19 +82,19 @@ export class LanHuDownloader {
                 project_id: projectId,
             }
         });
-        console.log('url:', itemUrl);
+        this.logger.log('url:', itemUrl);
 
         if (itemUrl == null) {
-            return console.warn(`设计稿 ${imageId} 没有切图`);
+            return this.logger.warn(`设计稿 ${imageId} 没有切图`);
         }
 
 
         try {
             // 下载图片
-            // console.log('psItem url:', itemUrl);
+            // this.logger.log('psItem url:', itemUrl);
             const assets = await this.downloadImageSliceImages(itemUrl, sourceFolder);
 
-            console.log('needScale:', needScale);
+            this.logger.log('needScale:', needScale);
             if (needScale && assets.length > 0) {
                 ensureDir(targetFolder);
                 const resizeOptions = {
@@ -102,10 +107,10 @@ export class LanHuDownloader {
                 await resizeImages(resizeOptions);
 
                 // 删除临时文件
-                console.log('del:', sourceFolder);
+                this.logger.log('del:', sourceFolder);
             }
         } catch (err) {
-            console.log('downloadSingleItem error:', err);
+            this.logger.log('downloadSingleItem error:', err);
             throw err;
         } finally {
             if (needScale && execFileSync(sourceFolder)) {
@@ -168,11 +173,11 @@ export class LanHuDownloader {
 
         const sector = (projectSectors || []).find(s => s.name === sectorName);
         if (!sector) {
-            return console.error(`未找到组:${sectorName}`);
+            return this.logger.error(`未找到组:${sectorName}`);
         }
 
         if (sector.images.length === 0) {
-            return console.log(`${sector.name}的设计稿数量为0, 无需下载`);
+            return this.logger.log(`${sector.name}的设计稿数量为0, 无需下载`);
         }
 
         // 获取全部信息
@@ -206,14 +211,14 @@ export class LanHuDownloader {
             englishName: i.englishName,
         }));
 
-        if (images.length === 0) return console.log(`${sector.name} 分组下的设计稿数量为0, 跳过`);
+        if (images.length === 0) return this.logger.log(`${sector.name} 分组下的设计稿数量为0, 跳过`);
         ensureDir(targetFolder);
 
         fsp.writeFile(path.join(targetFolder, '__map.json'), JSON.stringify(namesMap, undefined, '\t'));
 
         // 下载
         for (let i = 0; i < images.length; i++) {
-            console.log('download PS Item:', images[i].name);
+            this.logger.log('download PS Item:', images[i].name);
             const tf = path.join(targetFolder, images[i].enName || images[i].name);
 
             await this.downloadImageItem({
