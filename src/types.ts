@@ -91,4 +91,3 @@ export interface Logger  {
      */
     error(...messages: any[]): void;
 }
-}

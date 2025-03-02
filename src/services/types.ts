@@ -18,6 +18,9 @@ export interface ResResult<T = any> {
 
 
 export interface PSItemData {
+    board: {
+        name: string;
+    },
     exVersion: string;
     psVersion: number;
     parerVersion: string;

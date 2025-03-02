@@ -13,7 +13,6 @@ import { getLogger } from './logger';
 
 export class LanHuDownloader {
 
-
     private logger: Logger = getLogger();
 
     private options: LanHuDownloaderOptions;
@@ -34,6 +33,7 @@ export class LanHuDownloader {
         let assets = getPSItemAssets(psItemData, this.options.downloadScale) || [];
 
         if (assets.length <= 0) {
+            this.logger.log(`${psItemData?.board?.name} 没有可下载的切图`);
             return assets;
         }
 
@@ -41,6 +41,7 @@ export class LanHuDownloader {
 
         // 是否启用翻译
         if (!!this.options.enableTranslation) {
+            this.logger.log(`${psItemData?.board?.name} 启动翻译，准备调用翻译`);
             assets = await genEnglishNames(assets, 'name', 'enName');
         }
 
@@ -56,6 +57,9 @@ export class LanHuDownloader {
                 this.logger.log('asset download failed:', assets[i]);
                 continue;
             }
+
+
+            this.logger.log("下载切图：", asset.name);
 
             await lanHuServices.downloadAssert(assets[i]?.url!, targetPath);
             // this.logger.log('成功下载资源：', targetPath);
@@ -161,6 +165,7 @@ export class LanHuDownloader {
      */
     async downloadProjectGroup({ projectId: project_id, sectorName, targetFolder }: DownloadProjectGroupOptions) {
 
+        this.logger.log(`开始下载分组：${sectorName}`);
         const { teamId } = this.options;
 
         // 获取分组
@@ -233,8 +238,8 @@ export class LanHuDownloader {
     }
 
     /**
-  * 通过 url 下载单张设计稿的切图
-  */
+     * 通过 url 下载单张设计稿的切图
+     */
     async downloadProjectGroupByUrl({ url, targetFolder, sectorName }: DownloadProjectGroupByUrlOptions) {
         const queryObj = getQueryStringObject(url);
 
