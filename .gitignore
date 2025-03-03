@@ -3,3 +3,4 @@
 node_modules
 /dist
 /tests/url.ts
+lanhu.config.json
