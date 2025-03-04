@@ -1,9 +1,13 @@
 {
   "name": "lanhu-image-downloader",
-  "version": "0.0.1003",
+  "version": "0.0.1012",
   "description": "",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "typing": "./dist/index.d.ts",
+  "bin": {
+    "lanhu-image-downloader": "./dist/bin/index.js"
+  },
   "scripts": {
     "copy": "ts-node ./scripts/copy.ts",
     "build": "tsc && npm run copy",

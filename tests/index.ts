@@ -41,7 +41,7 @@ const myConsole = {
 
 
 ; (async function init() {
-    const url = URLS.image;
+    const url = URLS.imageSize;
 
 
     setLogger(myConsole)
@@ -52,7 +52,7 @@ const myConsole = {
         type: EnumUrlType.image,
         sectorName: "未分组",
         // sectorName: "未标题-1"
-        downloadScale: 2,
+        downloadScale: 1,
         // resizeScale: 0.5,
         enableTranslation: false
     })

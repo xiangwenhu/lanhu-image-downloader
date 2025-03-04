@@ -66,7 +66,7 @@ export enum EnumDownloadScale {
 }
 
 
-export interface Logger  {
+export interface Logger {
     /**
      * 记录一条通用日志信息
      * @param messages 要记录的日志信息，可以是多个参数
@@ -90,4 +90,9 @@ export interface Logger  {
      * @param messages 要记录的日志信息，可以是多个参数
      */
     error(...messages: any[]): void;
+}
+
+
+export type BinDownloadOptions = DownloadOptions & CommonParamsOptions  & {
+    configFilePath: string;
 }

@@ -1,3 +1,10 @@
+interface CommonParamsOptions {
+    teamId: string;
+    projectId: string;
+    imageId: string;
+    sectorName: string;
+}
+
 export enum EnumUrlType {
     project = 1,
     sector = 2,
@@ -198,3 +205,10 @@ export interface Logger  {
 
 export declare function setLogger(logger: Logger): void;
 export declare function getLogger(): Logger;
+
+
+export declare function downloadByEnv(): Promise<void>;
+
+export type BinDownloadOptions = DownloadOptions & CommonParamsOptions & {
+    configFilePath: string;
+};

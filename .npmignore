@@ -1,9 +1,10 @@
-node_modules
 .vscode
-.gitignore
-docs
-tsconfig.json
-tests
-src
-scripts
 data
+docs
+node_modules
+scripts
+src
+tests
+.gitignore
+lanhu.config.json
+tsconfig.json
