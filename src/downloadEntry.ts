@@ -49,7 +49,7 @@ export function downloadByUrl(url: string, configFilePath: string, options: Down
             break;
         case EnumUrlType.image:
             const paramsImg = (downloadParams as ConfigParamsInformation<EnumUrlType.image>).params;
-            downloader.downloadImageItem({ projectId: paramsImg.projectId, targetFolder, imageId: paramsImg.imageId })
+            downloader. downloadSingle({ projectId: paramsImg.projectId, targetFolder, imageId: paramsImg.imageId })
             break;
         default:
             throw new Error(`无效的type ${options.type}`);
@@ -94,7 +94,7 @@ export function downloadByOptions(options: BinDownloadOptions) {
             downloader.downloadProjectGroup({ projectId, targetFolder, sectorName })
             break;
         case EnumUrlType.image:
-            downloader.downloadImageItem({ projectId, targetFolder, imageId })
+            downloader. downloadSingle({ projectId, targetFolder, imageId })
             break;
         default:
             throw new Error(`无效的type ${options.type}`);

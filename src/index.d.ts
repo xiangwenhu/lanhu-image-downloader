@@ -152,7 +152,7 @@ export declare class LanHuDownloader {
     /**
      * 通过 projectId 和 image_id 下载单张设计稿的切图
      */
-    downloadImageItem({ targetFolder, imageId, projectId }: DownloadSingleItemOptions): Promise<void>;
+    downloadSingle({ targetFolder, imageId, projectId }: DownloadSingleItemOptions): Promise<void>;
     /**
      * 通过 url 下载单张设计稿的切图
      */

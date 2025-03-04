@@ -1,15 +1,15 @@
 
-import { execFileSync } from 'child_process';
 import fsp from "fs/promises";
 import path from 'path';
 import { DownloadProjectByUrlOptions, DownloadProjectGroupByUrlOptions, DownloadProjectGroupInnerOptions, DownloadProjectGroupOptions, DownloadProjectOptions, DownloadSingleByUrlOptions, DownloadSingleItemOptions, LanHuDownloaderOptions } from './LanHuDownloader.type';
 import lanHuServices, { GetPSItemParams } from './services';
 import { ProjectImageInfo, SectorItem } from './services/types';
 import { ensureDir, genEnglishNames, getQueryStringObject, sleep } from './utils';
-import { resizeImages } from './utils/image';
+import { resizeFolderImages, resizeImageBySize } from './utils/image';
 import { getPSItemAssets, sanitizeAssetNames } from './utils/lanhu';
 import { Logger } from './types';
 import { getLogger } from './logger';
+import { existsSync } from "fs";
 
 export class LanHuDownloader {
 
@@ -27,10 +27,10 @@ export class LanHuDownloader {
      * @param targetFolder 
      * @returns 
      */
-    private async downloadImageSliceImages(url: string, targetFolder: string) {
+    private async downloadItemSliceImages(url: string, targetFolder: string) {
 
         const psItemData = await lanHuServices.getPSItemData(url);
-        let assets = getPSItemAssets(psItemData, this.options.downloadScale) || [];
+        let assets = getPSItemAssets(psItemData) || [];
 
         if (assets.length <= 0) {
             this.logger.log(`${psItemData?.board?.name} 没有可下载的切图`);
@@ -50,19 +50,37 @@ export class LanHuDownloader {
 
         for (let i = 0; i < assets.length; i++) {
             const asset = assets[i];
-            // eslint-disable-next-line no-await-in-loop
-            const targetPath = path.join(targetFolder, `${asset.enName || asset.name}.png`);
+            let targetPathTemp: string = "";
+            try {
+                const fName = `${asset.enName || asset.name}`
+                targetPathTemp = path.join(targetFolder, `${fName}__tmp.png`);
+                const targetPath = path.join(targetFolder, `${fName}.png`);
 
-            if (!assets[i]?.url) {
-                this.logger.log('asset download failed:', assets[i]);
-                continue;
+                if (!assets[i]?.url) {
+                    this.logger.log('asset download failed:', assets[i]);
+                    continue;
+                }
+
+                this.logger.log(`切图${asset.name}: 下载开始`);
+                await lanHuServices.downloadAssert(assets[i]?.url!, targetPathTemp);
+                this.logger.log(`切图${asset.name}: 下载完毕`);
+
+                const scale = this.options.downloadScale || 1;
+                const width = scale * asset.width;
+                const height = scale * asset.height;
+
+                this.logger.log(`切图${asset.name}: 尺寸调整开始`);
+                await resizeImageBySize({ source: targetPathTemp, target: targetPath, width, height })
+                this.logger.log(`切图${asset.name}: 尺寸调整完毕`);
+
+            } catch (err) {
+                this.logger.log(`切图${asset.name}: 下载失败`, err);
+            } finally {
+                if (targetPathTemp && existsSync(targetPathTemp)) {
+                    await fsp.unlink(targetPathTemp)
+                }
             }
 
-
-            this.logger.log("下载切图：", asset.name);
-
-            await lanHuServices.downloadAssert(assets[i]?.url!, targetPath);
-            // this.logger.log('成功下载资源：', targetPath);
         }
         return assets;
     }
@@ -70,12 +88,12 @@ export class LanHuDownloader {
     /**
      * 通过 projectId 和 image_id 下载单张设计稿的切图
      */
-    async downloadImageItem({ targetFolder, imageId, projectId }: DownloadSingleItemOptions) {
+    async downloadSingle({ targetFolder, imageId, projectId }: DownloadSingleItemOptions) {
 
         const options = this.options;
         const { resizeScale = 1, teamId } = options;
 
-        const needScale = resizeScale !== 1;
+        const needScale = resizeScale < 1;
         const sourceFolder = !needScale ? targetFolder : path.join(targetFolder, '__temp');
 
         // 获取json_url
@@ -96,7 +114,7 @@ export class LanHuDownloader {
         try {
             // 下载图片
             // this.logger.log('psItem url:', itemUrl);
-            const assets = await this.downloadImageSliceImages(itemUrl, sourceFolder);
+            const assets = await this.downloadItemSliceImages(itemUrl, sourceFolder);
 
             this.logger.log('needScale:', needScale);
             if (needScale && assets.length > 0) {
@@ -108,7 +126,7 @@ export class LanHuDownloader {
                 };
 
                 // 默认尺寸为1倍，所以压缩，如果2倍，无需
-                await resizeImages(resizeOptions);
+                await resizeFolderImages(resizeOptions);
 
                 // 删除临时文件
                 this.logger.log('del:', sourceFolder);
@@ -117,7 +135,7 @@ export class LanHuDownloader {
             this.logger.log('downloadSingleItem error:', err);
             throw err;
         } finally {
-            if (needScale && execFileSync(sourceFolder)) {
+            if (needScale && existsSync(sourceFolder)) {
                 // TODO:: 中文问题
                 // await del([sourceFolder]);
                 fsp.rm(sourceFolder, {
@@ -150,7 +168,7 @@ export class LanHuDownloader {
             team_id: teamId,
         };
 
-        return this.downloadImageItem({
+        return this.downloadSingle({
             targetFolder,
             imageId: queryParam.image_id,
             projectId: queryParam.team_id,
@@ -226,7 +244,7 @@ export class LanHuDownloader {
             this.logger.log('download PS Item:', images[i].name);
             const tf = path.join(targetFolder, images[i].enName || images[i].name);
 
-            await this.downloadImageItem({
+            await this.downloadSingle({
                 imageId: images[i].id,
                 targetFolder: tf,
                 projectId: project_id,

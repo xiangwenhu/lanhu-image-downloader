@@ -45,6 +45,11 @@ export interface PSAssertItem {
     scaleType?: string;
 }
 
+interface ImageSize {
+    height: number;
+    width: number;
+}
+
 export interface PSItemDataInfo {
     id: number;
     index: number;
@@ -64,18 +69,31 @@ export interface PSItemDataInfo {
     exportable?: boolean;
     hasExportDDSImage: boolean;
     image?: {
+        isNew: boolean;
+        svg: string;
+        bitmap?: string;
         imageUrl: string;
-    },
+        size: ImageSize
+    };
     ddsImage?: {
         imageUrl?: string;
         png_xxxhd?: string;
-    }
+    };
+
+    width:  number
+    height: number;
+    symbolID: string;
+    originIndex:number;
+    isCopy?:boolean;
+    parentID: string
 }
 
-export interface AssetNameUrlInfo {
+export interface AssetBaseInfo {
     name: string;
     enName?: string;
     url: string;
+    height: number;
+    width: number;
 }
 
 export interface VersionInfo {
@@ -179,7 +197,7 @@ export interface UserTeam {
 export type ResUserTeam = ResResult<UserTeam[]>;
 
 
-export enum EnumSourceType  {
+export enum EnumSourceType {
     /**
      * 设计项目
      */
@@ -201,20 +219,20 @@ export enum EnumSourceType  {
 
 
 export interface TeamSourceItem {
-    id: number; 
-    sourceName: string; 
-    sourceType: EnumSourceType; 
-    sourceId: string; 
-    sourceShortId: string; 
-    sourceThumbnail: string; 
-    sourceBg: string; 
-    parentId: number; 
-    openTime: number; 
-    updateTime: number; 
-    createTime: number; 
-    orderIndex: number; 
-    creator: string; 
-    permissionType: number; 
+    id: number;
+    sourceName: string;
+    sourceType: EnumSourceType;
+    sourceId: string;
+    sourceShortId: string;
+    sourceThumbnail: string;
+    sourceBg: string;
+    parentId: number;
+    openTime: number;
+    updateTime: number;
+    createTime: number;
+    orderIndex: number;
+    creator: string;
+    permissionType: number;
 }
 
 export type ResTeamSource = ResData<TeamSourceItem[]>

@@ -41,7 +41,7 @@ const myConsole = {
 
 
 ; (async function init() {
-    const url = URLS.imageSize;
+    const url = URLS.imageIsMergedDownloadMoreThanExpected;
 
 
     setLogger(myConsole)
@@ -52,7 +52,7 @@ const myConsole = {
         type: EnumUrlType.image,
         sectorName: "未分组",
         // sectorName: "未标题-1"
-        downloadScale: 1,
+        downloadScale: 2,
         // resizeScale: 0.5,
         enableTranslation: false
     })

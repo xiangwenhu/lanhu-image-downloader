@@ -1,39 +1,29 @@
 import { getQueryStringObject, sanitizeFileName } from ".";
 import { ConfigData } from "../config";
-import { AssetNameUrlInfo, PSAssertItem, PSItemData, PSItemDataInfo } from "../services/types";
+import { AssetBaseInfo, PSAssertItem, PSItemData, PSItemDataInfo } from "../services/types";
 import { EnumUrlType, ConfigParamsInformation, DownloadOptions, EnumDownloadScale } from "../types";
 
 
 const UrlExtractor = {
-    assets(item: PSItemDataInfo, scale: EnumDownloadScale = EnumDownloadScale.default) {
+    assets(item: PSItemDataInfo) {
         const images_png_xxxhd = item.images?.png_xxxhd;
         const images_orgUrl = item.images?.orgUrl;
         const ddsImages_images_png_xxxhd = item.ddsImage?.png_xxxhd;
         const ddsImages_images_imageUrl = item.ddsImage?.imageUrl;
-
-        switch (scale) {
-            case EnumDownloadScale.default:
-                return images_orgUrl || ddsImages_images_imageUrl || images_png_xxxhd || ddsImages_images_png_xxxhd;
-            default:
-                return images_png_xxxhd || ddsImages_images_png_xxxhd || images_orgUrl || ddsImages_images_imageUrl;
-        }
+        return images_png_xxxhd || ddsImages_images_png_xxxhd || images_orgUrl || ddsImages_images_imageUrl;
 
     },
-    mergeData(item: PSItemDataInfo, scale: EnumDownloadScale = EnumDownloadScale.default) {
+    mergeData(item: PSItemDataInfo) {
         const image_imageUrl = item.image?.imageUrl;
         const ddsImage_imageUrl = item.ddsImage?.imageUrl;
-
-        switch (scale) {
-            case EnumDownloadScale.default:
-                return image_imageUrl || ddsImage_imageUrl;
-            default:
-                return ddsImage_imageUrl || image_imageUrl;
-        }
+        return image_imageUrl || ddsImage_imageUrl;
     }
 }
 
 
-export function getPSItemAssets(data: PSItemData, scale: EnumDownloadScale = EnumDownloadScale.default): AssetNameUrlInfo[] {
+
+
+export function getPSItemAssets(data: PSItemData): AssetBaseInfo[] {
 
     if (Array.isArray(data.assets) && data.assets.length > 0) {
         const { assets } = data;
@@ -45,32 +35,42 @@ export function getPSItemAssets(data: PSItemData, scale: EnumDownloadScale = Enu
             .map(item => {
                 if (item.isAsset && assetsMap[item.id]) {
                     const name = assetsMap[item.id].name;
-                    let url = UrlExtractor.assets(item, scale)
-                    return {
-                        url,
+                    let url = UrlExtractor.assets(item);
+
+                    const value: AssetBaseInfo = {
+                        url: url!,
                         name: name,
-                        enName: name
+                        enName: name,
+                        height: item.height,
+                        width: item.width
                     };
+
+                    return value
                 }
                 return undefined
             })
-            .filter(it=> it && it.url) as AssetNameUrlInfo[];
+            .filter(it => it && it.url) as AssetBaseInfo[];
         return result;
     } else if (data.isMergeData) {
-        const result = data.info.filter(item => !!item.exportable).map(item => {
+        const result = data.info.filter(item => {
+            return !!item.exportable
+        }).map(item => {
             const name = item.name;
-            let url = UrlExtractor.mergeData(item, scale)
-           
-            return {
-                url,
+            let url = UrlExtractor.mergeData(item)
+
+            const value: AssetBaseInfo = {
+                url: url!,
                 name: name,
                 enName: name,
-            }
-        }).filter(it => it.url) as AssetNameUrlInfo[];
+                height: item.height,
+                width: item.width
+            };
+
+            return value
+        }).filter(Boolean).filter(it => it.url) as AssetBaseInfo[];
 
         return result;
     }
-
 
     return [];
 }
@@ -154,14 +154,14 @@ function createNameFactory() {
 }
 
 
-export function sanitizeAssetNames(assets: AssetNameUrlInfo[]): AssetNameUrlInfo[] {
+export function sanitizeAssetNames(assets: AssetBaseInfo[]): AssetBaseInfo[] {
 
     const nameFactory = createNameFactory();
     const enNameFactory = createNameFactory();
 
     return assets.map(asset => {
         return {
-            url: asset.url,
+            ...asset,
             name: nameFactory(sanitizeFileName(asset.name)),
             enName: enNameFactory(sanitizeFileName(asset.enName || asset.name))
         }
