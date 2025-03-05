@@ -11,6 +11,7 @@
   "scripts": {
     "copy": "ts-node ./scripts/copy.ts",
     "build": "tsc && npm run copy",
+    "buildO": "tsc",
     "ppack": "npm run build && npm pack"
   },
   "keywords": [],
