@@ -165,3 +165,11 @@ export function sanitizeFileName(fileName: string): string {
 export function isString(obj: any){
     return typeof obj === "string";
 }
+
+
+export function arrayToRecord<T extends Record<string, any>>(arr: T[] = [], key: keyof T): Record<string, T> {
+    return arr.reduce((obj: Record<string, T>, cur) => {
+      obj[cur[key]] = cur;
+      return obj
+    }, {} as Record<string, T>)
+  }

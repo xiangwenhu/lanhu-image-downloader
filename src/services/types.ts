@@ -51,10 +51,11 @@ interface ImageSize {
 }
 
 export interface PSItemDataInfo {
-    id: number;
+    id: string;
     index: number;
     name: string;
     visible: boolean;
+    isVisible?: boolean;
     clipped: boolean;
     generatorSettings: boolean;
     ddsImages?: { orgUrl: string; base: string };
@@ -64,13 +65,15 @@ export interface PSItemDataInfo {
         base: string;
         png_xxxhd: string;
         svg: string;
+        svgUrl?: string;
     };
     type: "bitmap" | "shape" | "text" | "symbol" | "layer-group" | "layerSection" | "layer" | "shapeLayer" | "textLayer",
     exportable?: boolean;
     hasExportDDSImage: boolean;
     image?: {
         isNew: boolean;
-        svg: string;
+        svgUrl?: string;
+        svg?: string;
         bitmap?: string;
         imageUrl: string;
         size: ImageSize
@@ -80,18 +83,20 @@ export interface PSItemDataInfo {
         png_xxxhd?: string;
     };
 
-    width:  number
+    width: number
     height: number;
     symbolID: string;
-    originIndex:number;
-    isCopy?:boolean;
+    originIndex: number;
+    isCopy?: boolean;
     parentID: string
+    opacity?: string;
 }
 
 export interface AssetBaseInfo {
     name: string;
     enName?: string;
     url: string;
+    svgUrl?: string;
     height: number;
     width: number;
 }

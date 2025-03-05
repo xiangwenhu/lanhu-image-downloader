@@ -1,7 +1,15 @@
-import { getQueryStringObject, sanitizeFileName } from ".";
+import { arrayToRecord, getQueryStringObject, sanitizeFileName } from ".";
 import { ConfigData } from "../config";
 import { AssetBaseInfo, PSAssertItem, PSItemData, PSItemDataInfo } from "../services/types";
 import { EnumUrlType, ConfigParamsInformation, DownloadOptions, EnumDownloadScale } from "../types";
+
+
+// var h = c.value;
+// h.image && (h.image.imageUrl = l(h.image.imageUrl, e),
+// h.image.svgUrl = l(h.image.svgUrl, e)),
+// h.images && (h.images.png_xxxhd = l(h.images.png_xxxhd, e),
+// h.images.orgUrl = l(h.images.orgUrl, e),
+// h.images.svg = l(h.images.svg, e))
 
 
 const UrlExtractor = {
@@ -21,12 +29,30 @@ const UrlExtractor = {
 }
 
 
+/**
+ * 父可以导出
+ * @param item 
+ * @param record 
+ * @returns 
+ */
+function parentExportable(item: PSItemDataInfo, record: Record<string, PSItemDataInfo>) {
+    if (!item.parentID) return false;
+
+    let parentId = item.parentID;
+    let pItem = record[parentId];
+    do {
+        if (pItem.exportable) return true;
+        parentId = pItem.parentID;
+        pItem = record[parentId]
+    } while (pItem && pItem.id !== parentId)
+}
 
 
 export function getPSItemAssets(data: PSItemData): AssetBaseInfo[] {
 
     if (Array.isArray(data.assets) && data.assets.length > 0) {
         const { assets } = data;
+        //  l && l.isAsset && l.images && l.images.png_xxxhd || l.exportable
         const assetsMap: Record<string, PSAssertItem> = assets.filter(ass => ass.isAsset && ass.isSlice).reduce((obj, asset) => {
             obj[`${asset.id}`] = asset;
             return obj;
@@ -52,11 +78,26 @@ export function getPSItemAssets(data: PSItemData): AssetBaseInfo[] {
             .filter(it => it && it.url) as AssetBaseInfo[];
         return result;
     } else if (data.isMergeData) {
+
+        const infoRecord = arrayToRecord(data.info, "id");
+
         const result = data.info.filter(item => {
-            return !!item.exportable
+            return !!item.exportable && !!item.isVisible
+        }).filter(t => {
+            // ("layer-group" === i && t.symbolID && !t.exportable && !t.hasOwnProperty("opacity"))
+
+
+            if (!t.image || !t.image.isNew || !t.image.imageUrl) return false;
+
+            if (parentExportable(t, infoRecord)) return false;
+
+            if (t.type === "layer-group") {
+                return !t.symbolID && t.hasOwnProperty("opacity")
+            }
+            return true
         }).map(item => {
             const name = item.name;
-            let url = UrlExtractor.mergeData(item)
+            let url = UrlExtractor.mergeData(item);
 
             const value: AssetBaseInfo = {
                 url: url!,

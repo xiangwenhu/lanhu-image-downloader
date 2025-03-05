@@ -66,8 +66,8 @@ export class LanHuDownloader {
                 this.logger.log(`切图${asset.name}: 下载完毕`);
 
                 const scale = this.options.downloadScale || 1;
-                const width = scale * asset.width;
-                const height = scale * asset.height;
+                const width = Math.ceil(scale * asset.width);
+                const height = Math.ceil(scale * asset.height);
 
                 this.logger.log(`切图${asset.name}: 尺寸调整开始`);
                 await resizeImageBySize({ source: targetPathTemp, target: targetPath, width, height })
