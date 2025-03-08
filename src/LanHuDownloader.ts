@@ -1,23 +1,23 @@
 
+import { existsSync } from "fs";
 import fsp from "fs/promises";
 import path from 'path';
-import { DownloadProjectByUrlOptions, DownloadProjectGroupByUrlOptions, DownloadProjectGroupInnerOptions, DownloadProjectGroupOptions, DownloadProjectOptions, DownloadSingleByUrlOptions, DownloadSingleItemOptions, LanHuDownloaderOptions } from './LanHuDownloader.type';
+import { DownloadProjectGroupByUrlParams, DownloadProjectGroupInnerParams, DownloadProjectGroupParams, DownloadProjectParams, DownloadSingleItemParams, LanHuDownloaderConstructorOptions } from './LanHuDownloader.type';
+import { getLogger } from './logger';
 import lanHuServices, { GetPSItemParams } from './services';
 import { ProjectImageInfo, SectorItem } from './services/types';
+import { CommonParamsOptions, DownloadOptionsWithTargetFolder, Logger } from './types';
 import { ensureDir, genEnglishNames, getQueryStringObject, sleep } from './utils';
-import { resizeFolderImages, resizeImageBySize } from './utils/image';
+import { resizeImageBySize } from './utils/image';
 import { getPSItemAssets, sanitizeAssetNames } from './utils/lanhu';
-import { Logger } from './types';
-import { getLogger } from './logger';
-import { existsSync } from "fs";
 
 export class LanHuDownloader {
 
     private logger: Logger = getLogger();
 
-    private options: LanHuDownloaderOptions;
+    private options: LanHuDownloaderConstructorOptions;
 
-    constructor(options: LanHuDownloaderOptions = {}) {
+    constructor(options: LanHuDownloaderConstructorOptions) {
         this.options = Object.assign({}, options);
     }
 
@@ -27,7 +27,8 @@ export class LanHuDownloader {
      * @param targetFolder 
      * @returns 
      */
-    private async downloadItemSliceImages(url: string, targetFolder: string) {
+    private async downloadItemSliceImages(url: string, options: DownloadOptionsWithTargetFolder) {
+        const { targetFolder, downloadScale, enableTranslation } = options;
 
         const psItemData = await lanHuServices.getPSItemData(url);
         let assets = getPSItemAssets(psItemData) || [];
@@ -40,7 +41,7 @@ export class LanHuDownloader {
         ensureDir(targetFolder);
 
         // 是否启用翻译
-        if (!!this.options.enableTranslation) {
+        if (!!enableTranslation) {
             this.logger.log(`${psItemData?.board?.name} 启动翻译，准备调用翻译`);
             assets = await genEnglishNames(assets, 'name', 'enName');
         }
@@ -65,7 +66,7 @@ export class LanHuDownloader {
                 await lanHuServices.downloadAssert(assets[i]?.url!, targetPathTemp);
                 this.logger.log(`切图${asset.name}: 下载完毕`);
 
-                const scale = this.options.downloadScale || 1;
+                const scale = downloadScale || 1;
                 const width = Math.ceil(scale * asset.width);
                 const height = Math.ceil(scale * asset.height);
 
@@ -88,13 +89,10 @@ export class LanHuDownloader {
     /**
      * 通过 projectId 和 image_id 下载单张设计稿的切图
      */
-    async downloadSingle({ targetFolder, imageId, projectId }: DownloadSingleItemOptions) {
+    async downloadSingle(params: DownloadSingleItemParams, options: DownloadOptionsWithTargetFolder) {
+        const { teamId, imageId, projectId } = params;
 
-        const options = this.options;
-        const { resizeScale = 1, teamId } = options;
-
-        const needScale = resizeScale < 1;
-        const sourceFolder = !needScale ? targetFolder : path.join(targetFolder, '__temp');
+        const opts = Object.assign({}, this.options, options)
 
         // 获取json_url
         const itemUrl = await lanHuServices.getPSItemUrl({
@@ -110,45 +108,21 @@ export class LanHuDownloader {
             return this.logger.warn(`设计稿 ${imageId} 没有切图`);
         }
 
-
         try {
             // 下载图片
-            // this.logger.log('psItem url:', itemUrl);
-            const assets = await this.downloadItemSliceImages(itemUrl, sourceFolder);
-
-            this.logger.log('needScale:', needScale);
-            if (needScale && assets.length > 0) {
-                ensureDir(targetFolder);
-                const resizeOptions = {
-                    sourceFolder,
-                    targetFolder,
-                    scale: resizeScale,
-                };
-
-                // 默认尺寸为1倍，所以压缩，如果2倍，无需
-                await resizeFolderImages(resizeOptions);
-
-                // 删除临时文件
-                this.logger.log('del:', sourceFolder);
-            }
+            const assets = await this.downloadItemSliceImages(itemUrl, opts);
         } catch (err) {
             this.logger.log('downloadSingleItem error:', err);
             throw err;
-        } finally {
-            if (needScale && existsSync(sourceFolder)) {
-                // TODO:: 中文问题
-                // await del([sourceFolder]);
-                fsp.rm(sourceFolder, {
-                    recursive: true,
-                });
-            }
         }
     }
 
     /**
      * 通过 url 下载单张设计稿的切图
      */
-    async downloadSingleByUrl({ url, targetFolder }: DownloadSingleByUrlOptions) {
+    async downloadSingleByUrl(params: CommonParamsOptions & { url: string }, options: DownloadOptionsWithTargetFolder) {
+
+        const { url } = params;
 
         const queryObj = getQueryStringObject(url);
 
@@ -169,10 +143,10 @@ export class LanHuDownloader {
         };
 
         return this.downloadSingle({
-            targetFolder,
-            imageId: queryParam.image_id,
-            projectId: queryParam.team_id,
-        });
+            teamId: params.teamId,
+            projectId: params.projectId,
+            imageId: params.imageId
+        }, options);
     }
 
 
@@ -181,14 +155,15 @@ export class LanHuDownloader {
      * @param param0 
      * @returns 
      */
-    async downloadProjectGroup({ projectId: project_id, sectorName, targetFolder }: DownloadProjectGroupOptions) {
+    async downloadProjectGroup(params: DownloadProjectGroupParams, options: DownloadOptionsWithTargetFolder) {
+        const { sectorName, projectId: project_id , teamId} = params;
 
         this.logger.log(`开始下载分组：${sectorName}`);
-        const { teamId } = this.options;
 
+        const team_id = teamId || this.options.teamId;
         // 获取分组
         const projectSectors = await lanHuServices.getProjectSectors({ params: { project_id } });
-        const projectImages = await lanHuServices.getProjectImages({ params: { project_id, team_id: teamId! } });
+        const projectImages = await lanHuServices.getProjectImages({ params: { project_id, team_id: team_id! } });
 
         // 未分组 的特殊组
         const emptySector = this.createDefaultSector({ sectors: projectSectors, projectImages });
@@ -206,15 +181,19 @@ export class LanHuDownloader {
         // 获取全部信息
 
         return this.downloadProjectGroupInner({
+            teamId,
             projectImages,
             projectId: project_id,
-            targetFolder,
             sector
-        })
+        }, options)
     }
 
 
-    private async downloadProjectGroupInner({ projectImages, sector, targetFolder, projectId: project_id }: DownloadProjectGroupInnerOptions) {
+    private async downloadProjectGroupInner(params: DownloadProjectGroupInnerParams, options: DownloadOptionsWithTargetFolder) {
+
+        const { projectImages, sector, projectId: project_id, teamId } = params;
+        const { targetFolder } = options;
+
         // 合并信息
         const projectImagesMap: Record<string, ProjectImageInfo> = projectImages.reduce((obj: any, cur) => {
             obj[cur.id] = cur;
@@ -245,10 +224,10 @@ export class LanHuDownloader {
             const tf = path.join(targetFolder, images[i].enName || images[i].name);
 
             await this.downloadSingle({
+                teamId,
                 imageId: images[i].id,
-                targetFolder: tf,
                 projectId: project_id,
-            });
+            }, options);
 
             // 翻译软件 200ms 1次
             await sleep(200)
@@ -258,7 +237,10 @@ export class LanHuDownloader {
     /**
      * 通过 url 下载单张设计稿的切图
      */
-    async downloadProjectGroupByUrl({ url, targetFolder, sectorName }: DownloadProjectGroupByUrlOptions) {
+    async downloadProjectGroupByUrl(params: DownloadProjectGroupByUrlParams, options: DownloadOptionsWithTargetFolder) {
+
+        const { url, sectorName, } = params;
+
         const queryObj = getQueryStringObject(url);
 
         const project_id = queryObj.get("project_id") || queryObj.get("pid");
@@ -271,8 +253,10 @@ export class LanHuDownloader {
         this.options.teamId = teamId;
 
         return this.downloadProjectGroup({
-            projectId: project_id, sectorName, targetFolder
-        })
+            teamId,
+            projectId: project_id,
+            sectorName
+        }, options)
     }
 
 
@@ -302,13 +286,18 @@ export class LanHuDownloader {
     }
 
 
-    async downloadProjectByUrl({ url, targetFolder }: DownloadProjectByUrlOptions) {
+    async downloadProjectByUrl(params: DownloadProjectGroupByUrlParams, options: DownloadOptionsWithTargetFolder) {
+
+        const { url, } = params;
+
         const queryObj = getQueryStringObject(url);
 
         const project_id = queryObj.get("project_id") || queryObj.get("pid");
         if (!project_id) throw new Error(`url缺少参数 project_id 或者 pid`);
 
-        const { teamId } = this.options;
+
+        const teamId = queryObj.get("tid");
+        if (!teamId) throw new Error(`url缺少参数 tid`);
 
         // 获取项目分组
         const projectSectors = await lanHuServices.getProjectSectors({ params: { project_id } });
@@ -325,19 +314,17 @@ export class LanHuDownloader {
         for (let i = 0; i < projectSectors.length; i++) {
             const group = projectSectors[i];
             await this.downloadProjectGroupInner({
+                teamId,
                 projectImages,
                 projectId: project_id,
                 sector: group,
-                targetFolder: path.join(targetFolder, group.name)
-            })
+            }, options)
         }
-
     }
 
+    async downloadProject(params: DownloadProjectParams, options: DownloadOptionsWithTargetFolder) {
 
-    async downloadProject({ projectId: project_id, targetFolder }: DownloadProjectOptions) {
-
-        const { teamId } = this.options;
+        const { projectId: project_id, teamId } = params;
 
         // 获取项目分组
         const projectSectors = await lanHuServices.getProjectSectors({ params: { project_id } });
@@ -354,11 +341,11 @@ export class LanHuDownloader {
         for (let i = 0; i < projectSectors.length; i++) {
             const group = projectSectors[i];
             await this.downloadProjectGroupInner({
+                teamId,
                 projectImages,
                 projectId: project_id,
                 sector: group,
-                targetFolder: path.join(targetFolder, group.name)
-            })
+            }, options)
         }
 
     }

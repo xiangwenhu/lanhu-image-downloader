@@ -1,5 +1,5 @@
 import { getOptionsFromEnv } from "./util";
-import { downloadByOptions } from "../downloadEntry";
+import { downloadByOptions } from "../downloadBy";
 import { getLogger } from "../logger";
 
 export async function downloadByEnv() {

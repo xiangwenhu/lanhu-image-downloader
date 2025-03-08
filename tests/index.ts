@@ -41,7 +41,7 @@ const myConsole = {
 
 
 ; (async function init() {
-    const url = URLS.imageIsMerged3;
+    const url = URLS.image;
 
 
     setLogger(myConsole)

@@ -1,8 +1,8 @@
 import { arrayToRecord, getQueryStringObject, sanitizeFileName } from ".";
 import { ConfigData } from "../config";
+import { ConfigParamsInformation } from "../downloadBy.type";
 import { AssetBaseInfo, PSAssertItem, PSItemData, PSItemDataInfo } from "../services/types";
-import { EnumUrlType, ConfigParamsInformation, DownloadOptions, EnumDownloadScale } from "../types";
-
+import { EnumUrlType, CommonDownloadOptions } from "../types";
 
 // var h = c.value;
 // h.image && (h.image.imageUrl = l(h.image.imageUrl, e),
@@ -126,7 +126,10 @@ function createUnknownDownloadParams(message: string) {
     }
 }
 
-export function getDownloadParamsByUrl(urlValue: string, options: DownloadOptions, config: Pick<ConfigData, "teamId">): ConfigParamsInformation<EnumUrlType> {
+export function getDownloadParamsByUrl(urlValue: string, options: CommonDownloadOptions & {
+    sectorName?: string;
+    type: EnumUrlType
+}, config: Pick<ConfigData, "teamId">): ConfigParamsInformation<EnumUrlType> {
 
     const { sectorName, type } = options;
 
@@ -193,7 +196,6 @@ function createNameFactory() {
         return rName;
     }
 }
-
 
 export function sanitizeAssetNames(assets: AssetBaseInfo[]): AssetBaseInfo[] {
 

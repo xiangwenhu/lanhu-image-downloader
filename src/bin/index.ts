@@ -1,4 +1,4 @@
-import { downloadByOptions } from "../downloadEntry";
+import { downloadByOptions } from "../downloadBy";
 import { getLogger } from "../logger";
 import { getOptionsFromEnv } from "./util";
 

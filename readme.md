@@ -62,5 +62,7 @@ sharp(inputBuffer)
   下载图片后，按照尺寸调整图片大小（sharp）
 - [ ] 图片下载格式选择（png, jpg, webp）
 - [ ] 图片下载格式选择 svg
+- [ ] 平台（IOS, Android, Web）
+- [ ] 瘦身
 - [ ] 完善日志
 - [ ] 打包发布

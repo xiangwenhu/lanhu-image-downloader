@@ -1,11 +1,12 @@
+import { existsSync } from "fs";
 import "petal-service";
 import { readConfig } from "./config";
+import { BinDownloadOptions, ConfigParamsInformation, DownloadByUrlOptions } from "./downloadBy.type";
 import { LanHuDownloader } from "./LanHuDownloader";
-import { DownloadOptions, ConfigParamsInformation, EnumUrlType, BinDownloadOptions } from "./types";
+import { DownloadOptionsWithTargetFolder, EnumUrlType } from "./types";
 import { getDownloadParamsByUrl } from "./utils/lanhu";
-import { existsSync } from "fs";
 
-export function downloadByUrl(url: string, configFilePath: string, options: DownloadOptions) {
+export function downloadByUrl(url: string, configFilePath: string, options: DownloadByUrlOptions) {
 
     if (!existsSync(configFilePath)) {
         throw new Error(`配置文件不存在：${configFilePath}`)
@@ -32,24 +33,30 @@ export function downloadByUrl(url: string, configFilePath: string, options: Down
     const downloader = new LanHuDownloader({
         teamId,
         downloadScale: options.downloadScale || config.downloadScale,
-        resizeScale: options.resizeScale || config.resizeScale,
         enableTranslation: options.enableTranslation || config.enableTranslation
     });
 
     const { targetFolder } = options;
 
+    const downloadOptions: DownloadOptionsWithTargetFolder = {
+        targetFolder,
+        cutImageStyle: options.cutImageStyle,
+        downloadScale: options.downloadScale,
+        enableTranslation: options.enableTranslation
+    }
+
     switch (options.type) {
         case EnumUrlType.project:
             const paramsP = (downloadParams as ConfigParamsInformation<EnumUrlType.project>).params;
-            downloader.downloadProject({ projectId: paramsP.projectId, targetFolder })
+            downloader.downloadProject({ projectId: paramsP.projectId }, downloadOptions)
             break;
         case EnumUrlType.sector:
             const paramsS = (downloadParams as ConfigParamsInformation<EnumUrlType.sector>).params;
-            downloader.downloadProjectGroup({ projectId: paramsS.projectId, targetFolder, sectorName: paramsS.sectorName })
+            downloader.downloadProjectGroup({ projectId: paramsS.projectId, sectorName: paramsS.sectorName }, downloadOptions)
             break;
         case EnumUrlType.image:
             const paramsImg = (downloadParams as ConfigParamsInformation<EnumUrlType.image>).params;
-            downloader. downloadSingle({ projectId: paramsImg.projectId, targetFolder, imageId: paramsImg.imageId })
+            downloader.downloadSingle({ projectId: paramsImg.projectId, imageId: paramsImg.imageId }, downloadOptions)
             break;
         default:
             throw new Error(`无效的type ${options.type}`);
@@ -59,7 +66,7 @@ export function downloadByUrl(url: string, configFilePath: string, options: Down
 
 export function downloadByOptions(options: BinDownloadOptions) {
 
-    const { configFilePath, teamId, downloadScale, resizeScale, enableTranslation, projectId, sectorName, imageId } = options;
+    const { configFilePath, teamId, downloadScale, enableTranslation, projectId, sectorName, imageId } = options;
 
     if (!existsSync(configFilePath)) {
         throw new Error(`配置文件不存在：${configFilePath}`)
@@ -77,24 +84,30 @@ export function downloadByOptions(options: BinDownloadOptions) {
         }
     });
 
+    const { targetFolder } = options;
+
+    const downloadOptions: DownloadOptionsWithTargetFolder = {
+        targetFolder
+    }
+
     const downloader = new LanHuDownloader({
-        teamId: teamId || config.teamId,
+        teamId: (teamId || config.teamId) as string,
+        cutImageStyle: options.cutImageStyle,
         downloadScale: downloadScale || config.downloadScale,
-        resizeScale: resizeScale || config.resizeScale,
         enableTranslation: enableTranslation || config.enableTranslation
     });
 
-    const { targetFolder } = options;
 
     switch (options.type) {
         case EnumUrlType.project:
-            downloader.downloadProject({ projectId, targetFolder })
+            downloader.downloadProject({ projectId }, downloadOptions)
             break;
         case EnumUrlType.sector:
-            downloader.downloadProjectGroup({ projectId, targetFolder, sectorName })
+            if (!sectorName) throw new Error(`缺少必要参数sectorName`);
+            downloader.downloadProjectGroup({ projectId, sectorName }, downloadOptions)
             break;
         case EnumUrlType.image:
-            downloader. downloadSingle({ projectId, targetFolder, imageId })
+            downloader.downloadSingle({ projectId, imageId }, downloadOptions)
             break;
         default:
             throw new Error(`无效的type ${options.type}`);

@@ -27,8 +27,8 @@ async function copyFile(sourcePath: string, destPath: string): Promise<void> {
 
 // 示例用法
 (async () => {
-    const sourceFilePath = path.resolve(__dirname, '../src/index.d.ts');
-    const destinationFilePath = path.resolve(__dirname, "../dist/index.d.ts");
+    // const sourceFilePath = path.resolve(__dirname, '../src/index.d.ts');
+    // const destinationFilePath = path.resolve(__dirname, "../dist/index.d.ts");
 
-    await copyFile(sourceFilePath, destinationFilePath);
+    // await copyFile(sourceFilePath, destinationFilePath);
 })();

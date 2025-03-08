@@ -1,4 +1,5 @@
-import { BinDownloadOptions, EnumUrlType } from "../types"
+import { BinDownloadOptions } from "../downloadBy.type";
+import {  EnumCutImageStyle, EnumUrlType } from "../types"
 
 
 function getValueFromEnv(property: string, defaultValue: any = "") {
@@ -22,9 +23,12 @@ function getValuesFormEnv(kvs: Record<string, string | Function>) {
 
 }
 
-const propertiesConfig = {
+const propertiesConfig = {    
     configFilePath: "",
+    teamId: "",
+    projectId: "",
     sectorName: "",
+    imageId: "",
     type(val: string) {
         return +val || EnumUrlType.image
     },
@@ -32,15 +36,10 @@ const propertiesConfig = {
     downloadScale(val: string) {
         return +val || 1
     },
-    resizeScale(val: string) {
-        return +val || 1
-    },
     enableTranslation(val: string) {
         return !!+val || false
     },
-    teamId: "",
-    projectId: "",
-    imageId: "",
+    cutImageStyle: EnumCutImageStyle.PNG
 }
 
 export function getOptionsFromEnv(): BinDownloadOptions {

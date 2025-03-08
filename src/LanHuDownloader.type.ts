@@ -1,59 +1,29 @@
 import { ProjectImageInfo, SectorItem } from "./services/types";
-import { EnumDownloadScale } from "./types";
+import { CommonDownloadOptions, CommonParamsOptions, NullableTeamIdParams } from "./types";
 
-export interface LanHuDownloaderOptions {
-    /**
-     * 下载的图片的切图大小， 1 | 2倍尺寸
-     */
-    downloadScale?: EnumDownloadScale;
-    /**
-     * 下载后重新调整图片的大小，一般选择缩小
-     */
-    resizeScale?: number;
-    teamId?: string;
-    /**
-     * 启用翻译
-     */
-    enableTranslation?: boolean;
-}
+export type LanHuDownloaderConstructorOptions = Partial<CommonDownloadOptions & Pick<CommonParamsOptions, "teamId">>;
 
-export interface DownloadSingleItemOptions {
-    imageId: string;
-    targetFolder: string;
-    projectId: string;
-}
+export type DownloadSingleItemParams = NullableTeamIdParams & Pick<CommonParamsOptions, "projectId" | "imageId">;
 
-export interface DownloadSingleByUrlOptions {
-    url: string;
-    targetFolder: string;
-    type?: string;
-}
-
-export interface DownloadProjectGroupOptions {
-    projectId: string;
+export type DownloadProjectGroupParams = NullableTeamIdParams & Pick<CommonParamsOptions, "projectId"> & {
     sectorName: string;
-    targetFolder: string;
 }
 
-export interface DownloadProjectGroupInnerOptions {
+export type DownloadProjectGroupInnerParams = NullableTeamIdParams & {
     sector: SectorItem;
     projectImages: ProjectImageInfo[];
     projectId: string;
-    targetFolder: string;
 }
 
-export interface DownloadProjectGroupByUrlOptions {
+export interface DownloadProjectGroupByUrlParams {
     url: string;
-    targetFolder: string;
     sectorName: string;
 }
 
-export interface DownloadProjectByUrlOptions {
+export interface DownloadProjectByUrlParams {
     url: string;
-    targetFolder: string;
 }
 
-export interface DownloadProjectOptions {
-    targetFolder: string;
+export type DownloadProjectParams = NullableTeamIdParams & {
     projectId: string;
 }
