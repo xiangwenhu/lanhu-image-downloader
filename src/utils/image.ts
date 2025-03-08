@@ -2,6 +2,14 @@ import fsp from "fs/promises";
 import path from "path";
 import imageSize from 'image-size';
 import sharp from 'sharp';
+import { EnumCutImageStyle } from "../types";
+
+
+export function getFilenameByType(name: string, type: EnumCutImageStyle) {
+    if (!type) return name
+    return `${name}.${type}`
+}
+
 
 interface ResizeFolderOptions {
     sourceFolder: string;
@@ -54,15 +62,42 @@ export async function resizeImage({ source, target, scale }: ResizeImageOptions)
     }
 }
 
-
-interface ResizeImageOptions2 {
+interface ResizeImageBySizeOptions {
     height: number;
     width: number;
     source: string;
     target: string;
-    quality?: number
+    quality?: number;
+    type?: EnumCutImageStyle
 }
 
-export async function resizeImageBySize({ source, target, width }: ResizeImageOptions2) {    
-    await sharp(source).resize({ width }).toFile(target);
+export async function resizeImageBySize({ source, target, width, type, quality }: ResizeImageBySizeOptions) {
+
+    const pip = sharp(source);
+
+    if (type) {
+
+        switch (type) {
+            case EnumCutImageStyle.PNG:
+                pip.png({
+                    quality: quality || 100
+                })
+                break;
+            case EnumCutImageStyle.JPG:
+                pip.jpeg({
+                    quality: quality || 100
+                })
+                break;
+            case EnumCutImageStyle.WebP:
+                pip.webp({
+                    quality: quality || 100
+                });
+                break
+            default:
+                break;
+
+        }
+    }
+
+    await pip.resize({ width }).toFile(target);
 }

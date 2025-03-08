@@ -6,11 +6,11 @@ export enum EnumUrlType {
 }
 
 export enum EnumCutImageStyle {
-    PNG = 'PNG',
-    JPG = 'JPG',
-    WebP = 'WebP',
-    SVG = 'SVG',
-    PDF = 'PDF'
+    PNG = 'png',
+    JPG = 'jpg',
+    WebP = 'webp',
+    SVG = 'svg',
+    PDF = 'pdf'
 }
 
 export enum EnumPlatForm {

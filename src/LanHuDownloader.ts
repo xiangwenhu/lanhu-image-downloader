@@ -6,9 +6,9 @@ import { DownloadProjectGroupByUrlParams, DownloadProjectGroupInnerParams, Downl
 import { getLogger } from './logger';
 import lanHuServices, { GetPSItemParams } from './services';
 import { ProjectImageInfo, SectorItem } from './services/types';
-import { CommonParamsOptions, DownloadOptionsWithTargetFolder, Logger } from './types';
+import { CommonParamsOptions, DownloadOptionsWithTargetFolder, EnumCutImageStyle, Logger } from './types';
 import { ensureDir, genEnglishNames, getQueryStringObject, sleep } from './utils';
-import { resizeImageBySize } from './utils/image';
+import { getFilenameByType, resizeImageBySize } from './utils/image';
 import { getPSItemAssets, sanitizeAssetNames } from './utils/lanhu';
 
 export class LanHuDownloader {
@@ -28,7 +28,7 @@ export class LanHuDownloader {
      * @returns 
      */
     private async downloadItemSliceImages(url: string, options: DownloadOptionsWithTargetFolder) {
-        const { targetFolder, downloadScale, enableTranslation } = options;
+        const { targetFolder, downloadScale, enableTranslation, cutImageStyle } = options;
 
         const psItemData = await lanHuServices.getPSItemData(url);
         let assets = getPSItemAssets(psItemData) || [];
@@ -53,9 +53,10 @@ export class LanHuDownloader {
             const asset = assets[i];
             let targetPathTemp: string = "";
             try {
+                const imageStyle = cutImageStyle || EnumCutImageStyle.PNG;
                 const fName = `${asset.enName || asset.name}`
-                targetPathTemp = path.join(targetFolder, `${fName}__tmp.png`);
-                const targetPath = path.join(targetFolder, `${fName}.png`);
+                targetPathTemp = path.join(targetFolder, getFilenameByType(`${fName}__tmp`, imageStyle));
+                const targetPath = path.join(targetFolder, getFilenameByType(`${fName}`, imageStyle));
 
                 if (!assets[i]?.url) {
                     this.logger.log('asset download failed:', assets[i]);
@@ -71,7 +72,7 @@ export class LanHuDownloader {
                 const height = Math.ceil(scale * asset.height);
 
                 this.logger.log(`切图${asset.name}: 尺寸调整开始`);
-                await resizeImageBySize({ source: targetPathTemp, target: targetPath, width, height })
+                await resizeImageBySize({ source: targetPathTemp, target: targetPath, width, height, type: imageStyle })
                 this.logger.log(`切图${asset.name}: 尺寸调整完毕`);
 
             } catch (err) {
@@ -136,12 +137,6 @@ export class LanHuDownloader {
 
         this.options.teamId = teamId;
 
-        const queryParam: GetPSItemParams = {
-            project_id: projectId,
-            image_id: imageId,
-            team_id: teamId,
-        };
-
         return this.downloadSingle({
             teamId: params.teamId,
             projectId: params.projectId,
@@ -156,7 +151,7 @@ export class LanHuDownloader {
      * @returns 
      */
     async downloadProjectGroup(params: DownloadProjectGroupParams, options: DownloadOptionsWithTargetFolder) {
-        const { sectorName, projectId: project_id , teamId} = params;
+        const { sectorName, projectId: project_id, teamId } = params;
 
         this.logger.log(`开始下载分组：${sectorName}`);
 

@@ -1,5 +1,5 @@
 import path from "path";
-import { EnumUrlType } from "../src/types";
+import { EnumCutImageStyle, EnumUrlType } from "../src/types";
 import { downloadByUrl } from "../src/index";
 import { URLS } from "./url";
 import { setLogger } from "../src/logger";
@@ -54,7 +54,8 @@ const myConsole = {
         // sectorName: "未标题-1"
         downloadScale: 2,
         // resizeScale: 0.5,
-        enableTranslation: false
+        enableTranslation: false,
+        cutImageStyle: EnumCutImageStyle.WebP
     })
 
 })();
