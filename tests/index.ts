@@ -41,18 +41,18 @@ const myConsole = {
 
 
 ; (async function init() {
-    const url = URLS.sketch.imageDuplicateNames;
+    const url = URLS.ps.imageSizeTest;
 
 
     setLogger(myConsole)
     const configPath = path.join(__dirname, "../lanhu.config.json")
 
     downloadByUrl(url, configPath, {
-        targetFolder: path.join(__dirname, "../data/sketch/imageDuplicateNames"),
+        targetFolder: path.join(__dirname, "../data/ps/imageSizeTest"),
         type: EnumUrlType.image,
         sectorName: "未分组",
         // sectorName: "未标题-1"
-        downloadScale: 3,
+        downloadScale: 1,
         // resizeScale: 0.5,
         enableTranslation: false,
         cutImageStyle: EnumCutImageStyle.JPG

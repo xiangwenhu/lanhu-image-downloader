@@ -50,6 +50,8 @@ sharp(inputBuffer)
 
 ```
 
+## 蓝湖插件支持
+目前蓝湖设计图转代码已支持 Sketch、PS、Figma、MasterGo 四款插件
 
 ## TODO
 - [x] 封装蓝湖处理部分 (2025-02-12)
@@ -63,6 +65,7 @@ sharp(inputBuffer)
 - [x] 图片下载格式选择（png, jpg, webp）(2025-03-09)
 - [ ] 平台（IOS, Android, Web）
 - [ ] 兼容：MasterJSON格式数据 (2025-03-10)
+- [ ] 兼容：Figma (暂无此设计搞)
 - [ ] 图片下载格式选择 svg
 - [ ] 瘦身
 - [ ] 完善日志

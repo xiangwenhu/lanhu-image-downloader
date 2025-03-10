@@ -1,5 +1,6 @@
 import { arrayToRecord, getQueryStringObject, sanitizeFileName } from ".";
 import { ConfigData } from "../config";
+import { DevicesMap, IOSDevices, IOSDevicesMap } from "../const";
 import { ConfigParamsInformation } from "../downloadBy.type";
 import { AssetBaseInfo, MasterJSONData, PsJSONData, SketchJSONData } from "../services/types";
 import { EnumUrlType, CommonDownloadOptions } from "../types";
@@ -18,24 +19,38 @@ const UrlExtractor = {
         const images_orgUrl = item.images?.orgUrl;
         const ddsImages_images_orgUrl = item.ddsImages?.orgUrl;
         return images_png_xxxhd || ddsImages_images_orgUrl || images_orgUrl;
-
     }
+}
+
+function getTargetValue(value: number, slicescale: number, downloadScale: number) {
+    return value;
+    // return Math.ceil(value / slicescale * downloadScale);
 }
 
 
 const assetsExtractor = {
-    master(data: MasterJSONData.Data): AssetBaseInfo[] {
+    master(data: MasterJSONData.Data, downloadScale: number): AssetBaseInfo[] {
+
+        const slicescale = data.meta.sliceScale || 2;
+        const deviceInfo = DevicesMap[data.meta.device.toLowerCase()] || IOSDevices[1];
+
         return (data.artboard?.layers || []).filter(l => l.hasExportImage).map(l => {
+
+
             return {
                 url: l.image?.imageUrl || "",
                 name: l.name,
                 enName: l.name,
-                height: l.frame.height,
-                width: l.frame.width
+                height: getTargetValue(l.frame.height * deviceInfo.scale, slicescale, downloadScale),
+                width: getTargetValue(l.frame.width * deviceInfo.scale, slicescale, downloadScale),
             }
         }).filter(a => !!a.url)
     },
-    sketch(data: SketchJSONData.Data): AssetBaseInfo[] {
+    sketch(data: SketchJSONData.Data, downloadScale: number): AssetBaseInfo[] {
+
+        const slicescale = data.sliceScale || 2;
+        const deviceInfo = DevicesMap[data.device.toLowerCase()] || IOSDevices[1];
+
         const infoRecord = arrayToRecord(data.info, "id");
 
         const result = data.info.filter(item => {
@@ -56,8 +71,8 @@ const assetsExtractor = {
                 url: url!,
                 name: name,
                 enName: name,
-                height: item.height,
-                width: item.width
+                height: getTargetValue(item.height * deviceInfo.scale, slicescale, downloadScale),
+                width: getTargetValue(item.width * deviceInfo.scale, slicescale, downloadScale),
             };
 
             return value
@@ -65,7 +80,11 @@ const assetsExtractor = {
 
         return result;
     },
-    ps(data: PsJSONData.Data): AssetBaseInfo[] {
+    ps(data: PsJSONData.Data, downloadScale: number): AssetBaseInfo[] {
+
+        const slicescale = data.sliceScale || 2;
+        const deviceInfo = DevicesMap[data.device.toLowerCase()] || IOSDevices[1];
+
         const { assets } = data;
         //  l && l.isAsset && l.images && l.images.png_xxxhd || l.exportable
         const assetsMap: Record<string, PsJSONData.Assets> = assets.filter(ass => ass.isAsset && ass.isSlice).reduce((obj, asset) => {
@@ -82,8 +101,8 @@ const assetsExtractor = {
                         url: url!,
                         name: name,
                         enName: name,
-                        height: item.height,
-                        width: item.width
+                        height: getTargetValue(item.height * deviceInfo.scale, slicescale, downloadScale),
+                        width: getTargetValue(item.width * deviceInfo.scale, slicescale, downloadScale),
                     };
 
                     return value
@@ -116,18 +135,18 @@ function parentExportable(item: SketchJSONData.Info, record: Record<string, Sket
 }
 
 
-export function getPSItemAssets(jsonData: PsJSONData.Data | MasterJSONData.Data | SketchJSONData.Data): AssetBaseInfo[] {
+export function getPSItemAssets(jsonData: PsJSONData.Data | MasterJSONData.Data | SketchJSONData.Data, downloadScale: number): AssetBaseInfo[] {
 
     const type = (jsonData as PsJSONData.Data | SketchJSONData.Data)?.type;
     const pluginName = (jsonData as MasterJSONData.Data)?.meta?.plugin?.name;
 
-    if (pluginName === "master") return assetsExtractor.master(jsonData as MasterJSONData.Data);
+    if (pluginName === "master") return assetsExtractor.master(jsonData as MasterJSONData.Data, downloadScale);
 
     switch (type) {
         case "sketchPlugin":
-            return assetsExtractor.sketch(jsonData as SketchJSONData.Data)
+            return assetsExtractor.sketch(jsonData as SketchJSONData.Data, downloadScale)
         case "ps":
-            return assetsExtractor.ps(jsonData as PsJSONData.Data)
+            return assetsExtractor.ps(jsonData as PsJSONData.Data, downloadScale)
         default:
             return []
     }

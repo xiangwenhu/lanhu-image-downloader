@@ -32,7 +32,7 @@ export class LanHuDownloader {
 
         const psItemData = await lanHuServices.getPSItemData(url);
 
-        let assets = getPSItemAssets(psItemData) || [];
+        let assets = getPSItemAssets(psItemData, downloadScale || 1) || [];
         this.logger.log(`获取切图数量为: ${assets.length}`)
 
         const name = (psItemData as MasterJSONData.Data)?.artboard?.name || (psItemData as PsJSONData.Data)?.board?.name || (psItemData as SketchJSONData.Data)?.pageName;
@@ -71,9 +71,8 @@ export class LanHuDownloader {
                 await lanHuServices.downloadWithFallbacks(assets[i]?.url!, targetPathTemp);
                 this.logger.log(`切图${asset.name}: 下载完毕`);
 
-                const scale = downloadScale || 1;
-                const width = Math.ceil(scale * asset.width);
-                const height = Math.ceil(scale * asset.height);
+                const width = asset.width;
+                const height = asset.height;
 
                 this.logger.log(`切图${asset.name}: 尺寸调整开始`);
                 await resizeImageBySize({ source: targetPathTemp, target: targetPath, width, height, type: imageStyle })
