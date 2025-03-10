@@ -5,7 +5,7 @@ import path from 'path';
 import { DownloadProjectGroupByUrlParams, DownloadProjectGroupInnerParams, DownloadProjectGroupParams, DownloadProjectParams, DownloadSingleItemParams, LanHuDownloaderConstructorOptions } from './LanHuDownloader.type';
 import { getLogger } from './logger';
 import lanHuServices, { GetPSItemParams } from './services';
-import { ProjectImageInfo, SectorItem } from './services/types';
+import { MasterJSONData, ProjectImageInfo, PSItemJSONData, PsJSONData, SectorItem, SketchJSONData } from './services/types';
 import { CommonParamsOptions, DownloadOptionsWithTargetFolder, EnumCutImageStyle, Logger } from './types';
 import { ensureDir, genEnglishNames, getQueryStringObject, sleep } from './utils';
 import { getFilenameByType, resizeImageBySize } from './utils/image';
@@ -31,10 +31,14 @@ export class LanHuDownloader {
         const { targetFolder, downloadScale, enableTranslation, cutImageStyle } = options;
 
         const psItemData = await lanHuServices.getPSItemData(url);
+
         let assets = getPSItemAssets(psItemData) || [];
+        this.logger.log(`获取切图数量为: ${assets.length}`)
+
+        const name = (psItemData as MasterJSONData.Data)?.artboard?.name || (psItemData as PsJSONData.Data)?.board?.name || (psItemData as SketchJSONData.Data)?.pageName;
 
         if (assets.length <= 0) {
-            this.logger.log(`${psItemData?.board?.name} 没有可下载的切图`);
+            this.logger.log(`${name} 没有可下载的切图`);
             return assets;
         }
 
@@ -42,7 +46,7 @@ export class LanHuDownloader {
 
         // 是否启用翻译
         if (!!enableTranslation) {
-            this.logger.log(`${psItemData?.board?.name} 启动翻译，准备调用翻译`);
+            this.logger.log(`${name} 启动翻译，准备调用翻译`);
             assets = await genEnglishNames(assets, 'name', 'enName');
         }
 
@@ -64,7 +68,7 @@ export class LanHuDownloader {
                 }
 
                 this.logger.log(`切图${asset.name}: 下载开始`);
-                await lanHuServices.downloadAssert(assets[i]?.url!, targetPathTemp);
+                await lanHuServices.downloadWithFallbacks(assets[i]?.url!, targetPathTemp);
                 this.logger.log(`切图${asset.name}: 下载完毕`);
 
                 const scale = downloadScale || 1;

@@ -1,6 +1,7 @@
 import fsPlus from 'fs/promises';
 import "petal-service"
-import { PSItemData, ResTeamSource, ResUserTeam, RSProjectImages, RSProjectSectors } from "./types";
+import { PSItemJSONData, ResTeamSource, ResUserTeam, RSProjectImages, RSProjectSectors } from "./types";
+import { getLogger } from '../logger';
 
 interface GetProjectImagesParams {
     project_id: string;
@@ -23,6 +24,11 @@ interface GetProjectSectorsParam {
     timeout: 30 * 1000
 })
 class LanHuService extends PetalBaseService {
+
+
+    private get logger() {
+        return getLogger();
+    }
 
     /**
      * 获得用户所在的全部团队信息
@@ -108,7 +114,7 @@ class LanHuService extends PetalBaseService {
     }
 
     getPSItemData(url: string) {
-        return this.request<PSItemData>({
+        return this.request<PSItemJSONData>({
             config: {
                 url
             }
@@ -131,6 +137,28 @@ class LanHuService extends PetalBaseService {
                 }
             }
         }).then(data => fsPlus.writeFile(targetPath, data, 'binary'))
+    }
+
+    async downloadWithFallbacks(originalUrl: string, targetPath: string, domainAlternatives: string[] = ["alipic.lanhuapp.com"]) {
+        let urlsToTry = [originalUrl];
+        if (domainAlternatives && domainAlternatives.length > 0) {
+            domainAlternatives.forEach(domain => {
+                const newUrl = new URL(originalUrl);
+                newUrl.hostname = domain;
+                urlsToTry.push(newUrl.toString());
+            });
+        }
+
+        for (let i = 0; i < urlsToTry.length; i++) {
+            try {
+                this.logger.log(`尝试下载URL: ${urlsToTry[i]}`);
+                // 尝试下载资源
+                return await this.downloadAssert(urlsToTry[i], targetPath);
+            } catch (error: any) {
+                this.logger.error("下载失败：", error.message);
+            }
+        }
+        throw new Error(`切图下载失败：${originalUrl}`);
     }
 
 }

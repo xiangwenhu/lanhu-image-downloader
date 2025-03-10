@@ -1,6 +1,6 @@
 {
   "name": "lanhu-image-downloader",
-  "version": "0.0.1",
+  "version": "0.0.10014",
   "description": "",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

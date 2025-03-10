@@ -41,21 +41,21 @@ const myConsole = {
 
 
 ; (async function init() {
-    const url = URLS.image;
+    const url = URLS.sketch.imageDuplicateNames;
 
 
     setLogger(myConsole)
-    const configPath = path.join(__dirname, "../data/config.json")
+    const configPath = path.join(__dirname, "../lanhu.config.json")
 
     downloadByUrl(url, configPath, {
-        targetFolder: path.join(__dirname, "../data/imageIsMerged3"),
+        targetFolder: path.join(__dirname, "../data/sketch/imageDuplicateNames"),
         type: EnumUrlType.image,
         sectorName: "未分组",
         // sectorName: "未标题-1"
-        downloadScale: 2,
+        downloadScale: 3,
         // resizeScale: 0.5,
         enableTranslation: false,
-        cutImageStyle: EnumCutImageStyle.WebP
+        cutImageStyle: EnumCutImageStyle.JPG
     })
 
 })();

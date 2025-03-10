@@ -17,80 +17,336 @@ export interface ResResult<T = any> {
 }
 
 
-export interface PSItemData {
-    board: {
+
+
+/**
+ * plugin:master
+ * 和 PSItemDataInfo 同类
+ * 
+ */
+export namespace MasterJSONData {
+
+    export interface Data {
+        assets: (string)[];
+        artboard: ArtBoard;
+        meta: Meta;
+    }
+
+    interface Frame {
+        left: number;
+        top: number;
+        height: number;
+        width: number;
+    }
+
+    interface Image {
+        imageUrl: string;
+        svgUrl: string;
+    }
+    interface Layers {
+        clipped: boolean;
+        frame: Frame;
+        hasExportDDSImage: boolean;
+        hasExportImage: boolean;
+        id: string;
+        isMask: boolean;
+        layers: any[];
         name: string;
-    },
-    exVersion: string;
-    psVersion: number;
-    parerVersion: string;
-    type: string;
-    device: string;
-    sliceScale: 2;
-    psdName: string;
-    newSid: string;
-    rawId: string;
-    imgMD5: string;
-    assets?: PSAssertItem[];
-    info: PSItemDataInfo[];
-    isMergeData?: boolean;
+        opacity: number;
+        radius: any[];
+        realFrame: Frame;
+        type: string;
+        visible: boolean;
+        origin: string;
+        combinedFrame?: Frame;
+        image?: Image;
+    }
+    interface ArtBoard {
+        id: string;
+        name: string;
+        type: string;
+        visible: boolean;
+        opacity: number;
+        frame: Frame;
+        realFrame: Frame;
+        clipped: boolean;
+        isMask: boolean;
+        hasExportImage: boolean;
+        hasExportDDSImage: boolean;
+        origin: string;
+        rotation: number;
+        transform: ((number)[])[];
+        layers: Layers[];
+    }
+    interface Host {
+        name: string;
+        version: string;
+    }
+    interface Plugin {
+        name: string;
+        version: string;
+    }
+    interface Meta {
+        device: string;
+        sliceScale: number;
+        id: string;
+        host: Host;
+        plugin: Plugin;
+    }
+
 }
 
-export interface PSAssertItem {
-    id: number;
-    isAsset: boolean;
-    isSlice: boolean;
-    name: string;
-    enName?: string;
-    scaleType?: string;
+export namespace SketchJSONData {
+
+    export interface Data {
+        flow: boolean;
+        imageUrlList: (string)[];
+        isMergeData: boolean;
+        ArtboardID: string;
+        sketchVersion: SketchVersion;
+        ArtboardScale: number;
+        sliceScale: number;
+        skBuild: number;
+        pluginVersion: string;
+        skVersion: number;
+        flowData: any[];
+        pageName: string;
+        info: Info[];
+        plVersion: string;
+        device: string;
+        url_md5: string;
+        md5: string;
+        json_md5: string;
+        type: "sketchPlugin";
+        exportScale: number;
+    }
+
+
+    interface SketchVersion {
+    }
+
+    interface DdsOriginFrame {
+        height: number;
+        x: number;
+        y: number;
+        width: number;
+    }
+    interface Size {
+        height: number;
+        width: number;
+    }
+    interface Point {
+        x: number;
+        y: number;
+    }
+    interface DdsImage {
+        isNew: number;
+        size: Size;
+        imageUrl: string;
+        point: Point;
+    }
+    interface LayerOriginFrame {
+        height: number;
+        x: number;
+        y: number;
+        width: number;
+    }
+
+    interface Image {
+        svgUrl: string;
+        isNew: number;
+        size: Size;
+        imageUrl: string;
+        point: Point;
+    }
+
+    export interface Info {
+        id: string;
+        top: number;
+        left: number;
+        name: string;
+        height: number;
+        ddsType?: string;
+        position_x?: number;
+        index: string | number;
+        position_y?: number;
+        width: number;
+        layers: any[];
+        hasExportDDSImage?: boolean;
+        isFlippedHorizontal?: boolean;
+        hasFixedLeft?: boolean;
+        edited?: boolean;
+        isFlippedVertical?: boolean;
+        isVisible?: boolean;
+        influenceHeight?: number;
+        booleanOperation?: number;
+        hasFixedWidth?: boolean;
+        type?: string;
+        ddsOriginFrame?: DdsOriginFrame;
+        hasFixedBottom?: boolean;
+        blendMode?: number;
+        hasClippingMask?: number;
+        rotation?: number;
+        isLocked?: boolean;
+        opacity?: number;
+        startMarkerType?: number;
+        hasFixedRight?: boolean;
+        exportable?: boolean;
+        windingRule?: number;
+        hasFixedTop?: boolean;
+        ddsImage?: DdsImage;
+        isAutolayout?: boolean;
+        miterLimit?: number;
+        influenceWidth?: number;
+        layerOriginFrame?: LayerOriginFrame;
+        isClosed?: boolean;
+        pointRadiusBehaviour?: number;
+        parentID: string;
+        endMarkerType?: number;
+        shouldBreakMaskChain?: boolean;
+        hasFixedHeight?: boolean;
+        influenceLeft?: number;
+        influenceTop?: number;
+        clippingMaskMode?: number;
+        symbolInstanceID?: string;
+        symbolID?: string;
+        symbolMasterID?: string;
+        dontSynchroniseWithSymbol?: boolean;
+        kerning?: number;
+        lineSpacingBehaviour?: number;
+        automaticallyDrawOnUnderlyingPath?: boolean;
+        characterSpacing?: number;
+        textBehaviour?: number;
+        ddsOriginSymbolID?: string;
+        ddsOriginSymbolInstanceID?: string;
+        isCopy?: boolean;
+        ddsOriginSymbolMasterID?: string;
+        image?: Image;
+    }
+
 }
 
-interface ImageSize {
-    height: number;
-    width: number;
-}
+export namespace PsJSONData {
 
-export interface PSItemDataInfo {
-    id: string;
-    index: number;
-    name: string;
-    visible: boolean;
-    isVisible?: boolean;
-    clipped: boolean;
-    generatorSettings: boolean;
-    ddsImages?: { orgUrl: string; base: string };
-    isAsset: true;
-    images: {
-        orgUrl: string;
+    export interface Data {
+        board: Board;
+        exVersion: string;
+        psVersion: number;
+        parerVersion: string;
+        type: "ps";
+        device: string;
+        sliceScale: number;
+        info: Info[];
+        assets: Assets[];
+        psdName: string;
+        newSid: string;
+        rawId: string;
+        imgMD5: string;
+    }
+
+
+    interface Images {
         base: string;
         png_xxxhd: string;
-        svg: string;
-        svgUrl?: string;
-    };
-    type: "bitmap" | "shape" | "text" | "symbol" | "layer-group" | "layerSection" | "layer" | "shapeLayer" | "textLayer",
-    exportable?: boolean;
-    hasExportDDSImage: boolean;
-    image?: {
-        isNew: boolean;
-        svgUrl?: string;
-        svg?: string;
-        bitmap?: string;
-        imageUrl: string;
-        size: ImageSize
-    };
-    ddsImage?: {
-        imageUrl?: string;
-        png_xxxhd?: string;
-    };
+    }
 
-    width: number
-    height: number;
-    symbolID: string;
-    originIndex: number;
-    isCopy?: boolean;
-    parentID: string
-    opacity?: string;
+    interface RealFrame {
+        left: number;
+        top: number;
+        width: number;
+        height: number;
+    }
+    interface DdsImages {
+        orgUrl: string;
+        base: string;
+    }
+
+
+    interface Layers {
+        id: number;
+        type: string;
+        name: string;
+        visible: boolean;
+        clipped: boolean;
+        generatorSettings: boolean;
+        layers?: any[];
+        isAsset: boolean;
+        isSlice: boolean;
+        width?: number;
+        height?: number;
+        top?: number;
+        left?: number;
+        images?: Images;
+        realFrame?: RealFrame;
+        ddsImages?: DdsImages;
+        hasExportDDSImage?: boolean;
+        index?: number;
+    }
+
+    interface Board {
+        id: number;
+        index: number;
+        type: string;
+        name: string;
+        visible: boolean;
+        clipped: boolean;
+        layers: Layers[];
+        resolution: number;
+        left: number;
+        top: number;
+        isAsset: boolean;
+        isSlice: boolean;
+        width: number;
+        height: number;
+    }
+    interface Images {
+        base: string;
+        orgUrl?: string;
+        png_xxxhd: string;
+        svg?: string;
+    }
+    interface RealFrame2 {
+        left: number;
+        top: number;
+        width: number;
+        height: number;
+    }
+    interface DdsImages {
+        orgUrl: string;
+        base: string;
+    }
+    export interface Info {
+        id: number;
+        index?: number;
+        type: string;
+        name: string;
+        visible: boolean;
+        clipped: boolean;
+        generatorSettings: boolean;
+        layers: Layers[];
+        resolution?: number;
+        left: number;
+        top: number;
+        isAsset: boolean;
+        isSlice: boolean;
+        width: number;
+        height: number;
+        images?: Images;
+        realFrame?: RealFrame2;
+        hasExportDDSImage?: boolean;
+        ddsImages?: DdsImages
+    }
+
+    export interface Assets {
+        name: string;
+        id: number;
+        isAsset: boolean;
+        isSlice: boolean;
+        scaleType: string;
+    }
 }
+
+export type PSItemJSONData = MasterJSONData.Data | SketchJSONData.Data | PsJSONData.Data;
 
 export interface AssetBaseInfo {
     name: string;

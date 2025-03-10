@@ -1,7 +1,7 @@
 import { arrayToRecord, getQueryStringObject, sanitizeFileName } from ".";
 import { ConfigData } from "../config";
 import { ConfigParamsInformation } from "../downloadBy.type";
-import { AssetBaseInfo, PSAssertItem, PSItemData, PSItemDataInfo } from "../services/types";
+import { AssetBaseInfo, MasterJSONData, PsJSONData, SketchJSONData } from "../services/types";
 import { EnumUrlType, CommonDownloadOptions } from "../types";
 
 // var h = c.value;
@@ -13,55 +13,70 @@ import { EnumUrlType, CommonDownloadOptions } from "../types";
 
 
 const UrlExtractor = {
-    assets(item: PSItemDataInfo) {
+    ps(item: PsJSONData.Info) {
         const images_png_xxxhd = item.images?.png_xxxhd;
         const images_orgUrl = item.images?.orgUrl;
-        const ddsImages_images_png_xxxhd = item.ddsImage?.png_xxxhd;
-        const ddsImages_images_imageUrl = item.ddsImage?.imageUrl;
-        return images_png_xxxhd || ddsImages_images_png_xxxhd || images_orgUrl || ddsImages_images_imageUrl;
+        const ddsImages_images_orgUrl = item.ddsImages?.orgUrl;
+        return images_png_xxxhd || ddsImages_images_orgUrl || images_orgUrl;
 
-    },
-    mergeData(item: PSItemDataInfo) {
-        const image_imageUrl = item.image?.imageUrl;
-        const ddsImage_imageUrl = item.ddsImage?.imageUrl;
-        return image_imageUrl || ddsImage_imageUrl;
     }
 }
 
 
-/**
- * 父可以导出
- * @param item 
- * @param record 
- * @returns 
- */
-function parentExportable(item: PSItemDataInfo, record: Record<string, PSItemDataInfo>) {
-    if (!item.parentID) return false;
+const assetsExtractor = {
+    master(data: MasterJSONData.Data): AssetBaseInfo[] {
+        return (data.artboard?.layers || []).filter(l => l.hasExportImage).map(l => {
+            return {
+                url: l.image?.imageUrl || "",
+                name: l.name,
+                enName: l.name,
+                height: l.frame.height,
+                width: l.frame.width
+            }
+        }).filter(a => !!a.url)
+    },
+    sketch(data: SketchJSONData.Data): AssetBaseInfo[] {
+        const infoRecord = arrayToRecord(data.info, "id");
 
-    let parentId = item.parentID;
-    let pItem = record[parentId];
-    do {
-        if (pItem.exportable) return true;
-        parentId = pItem.parentID;
-        pItem = record[parentId]
-    } while (pItem && pItem.id !== parentId)
-}
+        const result = data.info.filter(item => {
+            return !!item.exportable && !!item.isVisible
+        }).filter(t => {
+            if (!t.image || !t.image.isNew || !t.image.imageUrl) return false;
 
+            if (parentExportable(t, infoRecord)) return false;
 
-export function getPSItemAssets(data: PSItemData): AssetBaseInfo[] {
+            if (t.type === "layer-group") {
+                return !t.symbolID && t.hasOwnProperty("opacity")
+            }
+            return true
+        }).map(item => {
+            const name = item.name;
+            let url = item.image?.imageUrl || item.ddsImage?.imageUrl;
+            const value: AssetBaseInfo = {
+                url: url!,
+                name: name,
+                enName: name,
+                height: item.height,
+                width: item.width
+            };
 
-    if (Array.isArray(data.assets) && data.assets.length > 0) {
+            return value
+        }).filter(Boolean).filter(it => it.url) as AssetBaseInfo[];
+
+        return result;
+    },
+    ps(data: PsJSONData.Data): AssetBaseInfo[] {
         const { assets } = data;
         //  l && l.isAsset && l.images && l.images.png_xxxhd || l.exportable
-        const assetsMap: Record<string, PSAssertItem> = assets.filter(ass => ass.isAsset && ass.isSlice).reduce((obj, asset) => {
+        const assetsMap: Record<string, PsJSONData.Assets> = assets.filter(ass => ass.isAsset && ass.isSlice).reduce((obj, asset) => {
             obj[`${asset.id}`] = asset;
             return obj;
-        }, {} as Record<string, PSAssertItem>);
+        }, {} as Record<string, PsJSONData.Assets>);
         const result = data.info
             .map(item => {
                 if (item.isAsset && assetsMap[item.id]) {
                     const name = assetsMap[item.id].name;
-                    let url = UrlExtractor.assets(item);
+                    let url = UrlExtractor.ps(item);
 
                     const value: AssetBaseInfo = {
                         url: url!,
@@ -77,43 +92,45 @@ export function getPSItemAssets(data: PSItemData): AssetBaseInfo[] {
             })
             .filter(it => it && it.url) as AssetBaseInfo[];
         return result;
-    } else if (data.isMergeData) {
-
-        const infoRecord = arrayToRecord(data.info, "id");
-
-        const result = data.info.filter(item => {
-            return !!item.exportable && !!item.isVisible
-        }).filter(t => {
-            // ("layer-group" === i && t.symbolID && !t.exportable && !t.hasOwnProperty("opacity"))
-
-
-            if (!t.image || !t.image.isNew || !t.image.imageUrl) return false;
-
-            if (parentExportable(t, infoRecord)) return false;
-
-            if (t.type === "layer-group") {
-                return !t.symbolID && t.hasOwnProperty("opacity")
-            }
-            return true
-        }).map(item => {
-            const name = item.name;
-            let url = UrlExtractor.mergeData(item);
-
-            const value: AssetBaseInfo = {
-                url: url!,
-                name: name,
-                enName: name,
-                height: item.height,
-                width: item.width
-            };
-
-            return value
-        }).filter(Boolean).filter(it => it.url) as AssetBaseInfo[];
-
-        return result;
     }
+}
 
-    return [];
+
+
+/**
+ * 父可以导出
+ * @param item 
+ * @param record 
+ * @returns 
+ */
+function parentExportable(item: SketchJSONData.Info, record: Record<string, SketchJSONData.Info>) {
+    if (!item.parentID) return false;
+
+    let parentId = item.parentID;
+    let pItem = record[parentId];
+    do {
+        if (pItem.exportable) return true;
+        parentId = pItem.parentID;
+        pItem = record[parentId]
+    } while (pItem && pItem.id !== parentId)
+}
+
+
+export function getPSItemAssets(jsonData: PsJSONData.Data | MasterJSONData.Data | SketchJSONData.Data): AssetBaseInfo[] {
+
+    const type = (jsonData as PsJSONData.Data | SketchJSONData.Data)?.type;
+    const pluginName = (jsonData as MasterJSONData.Data)?.meta?.plugin?.name;
+
+    if (pluginName === "master") return assetsExtractor.master(jsonData as MasterJSONData.Data);
+
+    switch (type) {
+        case "sketchPlugin":
+            return assetsExtractor.sketch(jsonData as SketchJSONData.Data)
+        case "ps":
+            return assetsExtractor.ps(jsonData as PsJSONData.Data)
+        default:
+            return []
+    }
 }
 
 
@@ -210,3 +227,4 @@ export function sanitizeAssetNames(assets: AssetBaseInfo[]): AssetBaseInfo[] {
         }
     })
 }
+
