@@ -33,7 +33,8 @@ export function downloadByUrl(url: string, configFilePath: string, options: Down
     const downloader = new LanHuDownloader({
         teamId,
         downloadScale: options.downloadScale || config.downloadScale,
-        enableTranslation: options.enableTranslation || config.enableTranslation
+        enableTranslation: options.enableTranslation || config.enableTranslation,
+        platform: options.platform
     });
 
     const { targetFolder } = options;
@@ -42,7 +43,8 @@ export function downloadByUrl(url: string, configFilePath: string, options: Down
         targetFolder,
         cutImageStyle: options.cutImageStyle,
         downloadScale: options.downloadScale,
-        enableTranslation: options.enableTranslation
+        enableTranslation: options.enableTranslation,
+        platform: options.platform
     }
 
     switch (options.type) {

@@ -2,8 +2,8 @@ import { arrayToRecord, getQueryStringObject, sanitizeFileName } from ".";
 import { ConfigData } from "../config";
 import { DevicesMap, IOSDevices, IOSDevicesMap } from "../const";
 import { ConfigParamsInformation } from "../downloadBy.type";
-import { AssetBaseInfo, MasterJSONData, PsJSONData, SketchJSONData } from "../services/types";
-import { EnumUrlType, CommonDownloadOptions } from "../types";
+import { AssetBaseInfo, AssetBaseInfoPlus, MasterJSONData, PsJSONData, SketchJSONData } from "../services/types";
+import { EnumUrlType, CommonDownloadOptions, EnumPlatForm } from "../types";
 
 // var h = c.value;
 // h.image && (h.image.imageUrl = l(h.image.imageUrl, e),
@@ -22,38 +22,54 @@ const UrlExtractor = {
     }
 }
 
-function getTargetValue(value: number, slicescale: number, downloadScale: number) {
-    return value;
-    // return Math.ceil(value / slicescale * downloadScale);
+export function getTargetValue(originalValue: number, options: ScaleOptions & {
+    slicescale: number;
+    device: string;
+}) {
+
+    const { device, downloadScale, slicescale, platform } = options;
+
+    if (platform === EnumPlatForm.Web) {
+        if (device.toLowerCase().indexOf("web") > -1) {
+            return Math.ceil(originalValue / 2 * downloadScale)
+        } else {
+            return Math.ceil(originalValue / slicescale * downloadScale)
+        }
+    } else {
+        return Math.round(originalValue / 4 * downloadScale);
+    }
 }
 
 
 const assetsExtractor = {
-    master(data: MasterJSONData.Data, downloadScale: number): AssetBaseInfo[] {
-
-        const slicescale = data.meta.sliceScale || 2;
-        const deviceInfo = DevicesMap[data.meta.device.toLowerCase()] || IOSDevices[1];
-
-        return (data.artboard?.layers || []).filter(l => l.hasExportImage).map(l => {
+    master(data: MasterJSONData.Data): AssetBaseInfoPlus {
+        const slicescale = data.meta.sliceScale;
+        const device = data.meta.device;
 
 
+        const assets = (data.artboard?.layers || []).filter(l => l.hasExportImage).map(l => {
             return {
                 url: l.image?.imageUrl || "",
                 name: l.name,
                 enName: l.name,
-                height: getTargetValue(l.frame.height * deviceInfo.scale, slicescale, downloadScale),
-                width: getTargetValue(l.frame.width * deviceInfo.scale, slicescale, downloadScale),
+                width: l.frame.width,
+                height: l.frame.height
             }
-        }).filter(a => !!a.url)
+        }).filter(a => !!a.url) as AssetBaseInfo[]
+
+        return {
+            assets,
+            slicescale,
+            device
+        }
     },
-    sketch(data: SketchJSONData.Data, downloadScale: number): AssetBaseInfo[] {
-
-        const slicescale = data.sliceScale || 2;
-        const deviceInfo = DevicesMap[data.device.toLowerCase()] || IOSDevices[1];
-
+    sketch(data: SketchJSONData.Data): AssetBaseInfoPlus {
         const infoRecord = arrayToRecord(data.info, "id");
 
-        const result = data.info.filter(item => {
+        const slicescale = data.sliceScale;
+        const device = data.device;
+
+        const assets = data.info.filter(item => {
             return !!item.exportable && !!item.isVisible
         }).filter(t => {
             if (!t.image || !t.image.isNew || !t.image.imageUrl) return false;
@@ -71,21 +87,25 @@ const assetsExtractor = {
                 url: url!,
                 name: name,
                 enName: name,
-                height: getTargetValue(item.height * deviceInfo.scale, slicescale, downloadScale),
-                width: getTargetValue(item.width * deviceInfo.scale, slicescale, downloadScale),
+                width: item.width,
+                height: item.height,
             };
 
             return value
         }).filter(Boolean).filter(it => it.url) as AssetBaseInfo[];
 
-        return result;
+        return {
+            assets,
+            device,
+            slicescale
+        };
     },
-    ps(data: PsJSONData.Data, downloadScale: number): AssetBaseInfo[] {
-
-        const slicescale = data.sliceScale || 2;
-        const deviceInfo = DevicesMap[data.device.toLowerCase()] || IOSDevices[1];
-
+    ps(data: PsJSONData.Data): AssetBaseInfoPlus {
         const { assets } = data;
+
+        const slicescale = data.sliceScale;
+        const device = data.device;
+
         //  l && l.isAsset && l.images && l.images.png_xxxhd || l.exportable
         const assetsMap: Record<string, PsJSONData.Assets> = assets.filter(ass => ass.isAsset && ass.isSlice).reduce((obj, asset) => {
             obj[`${asset.id}`] = asset;
@@ -101,8 +121,8 @@ const assetsExtractor = {
                         url: url!,
                         name: name,
                         enName: name,
-                        height: getTargetValue(item.height * deviceInfo.scale, slicescale, downloadScale),
-                        width: getTargetValue(item.width * deviceInfo.scale, slicescale, downloadScale),
+                        width: item.width,
+                        height: item.height,
                     };
 
                     return value
@@ -110,7 +130,12 @@ const assetsExtractor = {
                 return undefined
             })
             .filter(it => it && it.url) as AssetBaseInfo[];
-        return result;
+
+        return {
+            assets: result,
+            slicescale,
+            device
+        };
     }
 }
 
@@ -135,20 +160,25 @@ function parentExportable(item: SketchJSONData.Info, record: Record<string, Sket
 }
 
 
-export function getPSItemAssets(jsonData: PsJSONData.Data | MasterJSONData.Data | SketchJSONData.Data, downloadScale: number): AssetBaseInfo[] {
+interface ScaleOptions {
+    downloadScale: number,
+    platform: EnumPlatForm;
+}
+
+export function getPSItemAssets(jsonData: PsJSONData.Data | MasterJSONData.Data | SketchJSONData.Data): AssetBaseInfoPlus | undefined {
 
     const type = (jsonData as PsJSONData.Data | SketchJSONData.Data)?.type;
     const pluginName = (jsonData as MasterJSONData.Data)?.meta?.plugin?.name;
 
-    if (pluginName === "master") return assetsExtractor.master(jsonData as MasterJSONData.Data, downloadScale);
+    if (pluginName === "master") return assetsExtractor.master(jsonData as MasterJSONData.Data);
 
     switch (type) {
         case "sketchPlugin":
-            return assetsExtractor.sketch(jsonData as SketchJSONData.Data, downloadScale)
+            return assetsExtractor.sketch(jsonData as SketchJSONData.Data)
         case "ps":
-            return assetsExtractor.ps(jsonData as PsJSONData.Data, downloadScale)
+            return assetsExtractor.ps(jsonData as PsJSONData.Data)
         default:
-            return []
+            return undefined
     }
 }
 

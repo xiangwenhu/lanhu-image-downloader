@@ -5,11 +5,11 @@ import path from 'path';
 import { DownloadProjectGroupByUrlParams, DownloadProjectGroupInnerParams, DownloadProjectGroupParams, DownloadProjectParams, DownloadSingleItemParams, LanHuDownloaderConstructorOptions } from './LanHuDownloader.type';
 import { getLogger } from './logger';
 import lanHuServices, { GetPSItemParams } from './services';
-import { MasterJSONData, ProjectImageInfo, PSItemJSONData, PsJSONData, SectorItem, SketchJSONData } from './services/types';
-import { CommonParamsOptions, DownloadOptionsWithTargetFolder, EnumCutImageStyle, Logger } from './types';
+import { AssetBaseInfoPlus, MasterJSONData, ProjectImageInfo, PSItemJSONData, PsJSONData, SectorItem, SketchJSONData } from './services/types';
+import { CommonParamsOptions, DownloadOptionsWithTargetFolder, EnumCutImageStyle, EnumPlatForm, Logger } from './types';
 import { ensureDir, genEnglishNames, getQueryStringObject, sleep } from './utils';
-import { getFilenameByType, resizeImageBySize } from './utils/image';
-import { getPSItemAssets, sanitizeAssetNames } from './utils/lanhu';
+import { getFilenameByType, getImageSize, resizeImageBySize } from './utils/image';
+import { getPSItemAssets, getTargetValue, sanitizeAssetNames } from './utils/lanhu';
 
 export class LanHuDownloader {
 
@@ -28,11 +28,23 @@ export class LanHuDownloader {
      * @returns 
      */
     private async downloadItemSliceImages(url: string, options: DownloadOptionsWithTargetFolder) {
-        const { targetFolder, downloadScale, enableTranslation, cutImageStyle } = options;
+        const { targetFolder, downloadScale, enableTranslation, cutImageStyle, platform } = options;
 
         const psItemData = await lanHuServices.getPSItemData(url);
 
-        let assets = getPSItemAssets(psItemData, downloadScale || 1) || [];
+        let assetsPlus = getPSItemAssets(psItemData) || [];
+
+        if (!assetsPlus) return this.logger.warn(`未匹配匹配到相关的资源`)
+
+        let { assets, device, slicescale } = assetsPlus as AssetBaseInfoPlus;
+
+        const sOptions = {
+            downloadScale: downloadScale || 1,
+            platform: platform || EnumPlatForm.Web,
+            slicescale,
+            device,
+        }
+
         this.logger.log(`获取切图数量为: ${assets.length}`)
 
         const name = (psItemData as MasterJSONData.Data)?.artboard?.name || (psItemData as PsJSONData.Data)?.board?.name || (psItemData as SketchJSONData.Data)?.pageName;
@@ -71,8 +83,16 @@ export class LanHuDownloader {
                 await lanHuServices.downloadWithFallbacks(assets[i]?.url!, targetPathTemp);
                 this.logger.log(`切图${asset.name}: 下载完毕`);
 
-                const width = asset.width;
-                const height = asset.height;
+
+                const dimensions = await getImageSize(targetPathTemp)
+
+                if (!dimensions || !dimensions.height || !dimensions.width) {
+                    this.logger.error(`获取图片尺寸信息失败`);
+                    continue;
+                }
+
+                const width = getTargetValue(dimensions.width, sOptions)
+                const height = getTargetValue(dimensions.height, sOptions)
 
                 this.logger.log(`切图${asset.name}: 尺寸调整开始`);
                 await resizeImageBySize({ source: targetPathTemp, target: targetPath, width, height, type: imageStyle })

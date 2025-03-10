@@ -348,6 +348,12 @@ export namespace PsJSONData {
 
 export type PSItemJSONData = MasterJSONData.Data | SketchJSONData.Data | PsJSONData.Data;
 
+export interface AssetBaseInfoPlus {
+    assets: AssetBaseInfo[];
+    slicescale: number;
+    device: string;
+}
+
 export interface AssetBaseInfo {
     name: string;
     enName?: string;

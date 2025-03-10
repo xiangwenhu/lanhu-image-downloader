@@ -35,6 +35,7 @@ export interface CommonParamsOptions {
 }
 
 export interface CommonDownloadOptions {
+    platform?: EnumPlatForm;
     /**
      * 下载切图样式
      */
