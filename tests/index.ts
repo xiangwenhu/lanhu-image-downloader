@@ -41,20 +41,20 @@ const myConsole = {
 
 
 ; (async function init() {
-    const url = URLS.ps.SizeSame;
+    const url = URLS.sketch.sameSize;
 
 
     setLogger(myConsole)
     const configPath = path.join(__dirname, "../lanhu.config.json")
 
     downloadByUrl(url, configPath, {
-        targetFolder: path.join(__dirname, "../data/ps/SizeSame"),
+        targetFolder: path.join(__dirname, "../data/sketch/sameSize"),
         type: EnumUrlType.image,
         sectorName: "未分组",
-        downloadScale: 4,
+        downloadScale: 3,
         enableTranslation: false,
-        cutImageStyle: EnumCutImageStyle.JPG,
-        platform: EnumPlatForm.Android
+        cutImageStyle: EnumCutImageStyle.PNG,
+        platform: EnumPlatForm.IOS
     })
 
 })();

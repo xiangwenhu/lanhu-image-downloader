@@ -50,22 +50,27 @@ sharp(inputBuffer)
 
 ```
 
-## 蓝湖插件支持
-目前蓝湖设计图转代码已支持 Sketch、PS、Figma、MasterGo 四款插件
+## 蓝湖插件以及已支持的情况
+打开 [pricing](https://lanhuapp.com/pricing) 下载菜单，
+- [x] MasterGo 插件
+- [x] Sketch 插件
+- [x] Photoshop 插件
+- [ ] Adobe XD 插件
+- [ ] Figma 插件
+- [ ] Axure 插件
 
 ## TODO
 - [x] 封装蓝湖处理部分 (2025-02-12)
 - [x] 组名为未分组的特殊处理 (2025-02-12)
 - [x] 地址反向解析, 通过地址识别是单个 设计稿|组|项目 (2025-02-15)
-- [x] 下载源头就选择1倍 或者 2倍 (2025-02-15) (无需此操作)
-- [x] isMergeData模式导致多下载图片的问题 (V1修复版本)
+- [x] Sketch插件：isMergeData 导致多下载图片的问题 (V1修复版本)
   判断父是否可以导出 + layer-group的特殊判断  （2025-03-05）
 - [x] 下载的图片与蓝湖显示的尺寸大小不一样的问题，目前分析是蓝湖web端做了处理 （2025-03-04）
   下载图片后，按照尺寸调整图片大小（sharp）
 - [x] 图片下载格式选择（png, jpg, webp）(2025-03-09)
-- [ ] 平台（IOS, Android, Web）
-- [ ] 兼容：MasterJSON格式数据 (2025-03-10)
-- [ ] 兼容：Figma (暂无此设计搞)
+- [x] 平台（IOS, Android, Web）(2025-03-11)
+- [x] 兼容（MasterGo）：MasterJSON格式数据 (2025-03-10)
+- [ ] 兼容（Figma）：Figma (暂无此设计搞)
 - [ ] 图片下载格式选择 svg
 - [ ] 瘦身
 - [ ] 完善日志
